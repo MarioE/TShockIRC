@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TShockIRC", "TShockIRC\TShockIRC.csproj", "{A1F17727-6A6C-4FE5-9619-19362A9FF38B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1F17727-6A6C-4FE5-9619-19362A9FF38B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1F17727-6A6C-4FE5-9619-19362A9FF38B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1F17727-6A6C-4FE5-9619-19362A9FF38B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1F17727-6A6C-4FE5-9619-19362A9FF38B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
