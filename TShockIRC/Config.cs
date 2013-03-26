@@ -36,6 +36,7 @@ namespace TShockIRC
 		public string ServerChatMessageFormat = "\u000302{0}<{1}>\u000f {2}";
 		public string ServerChatNoPFixMessageFormat = "\u000302<{0}>\u000f {1}";
 		public string ServerJoinMessageFormat = "\u000303{0} has joined.";
+        public string ServerJoinIPMessageFormat = "\u000303{0} has joined. IP: {1}";
 		public string ServerLeaveMessageFormat = "\u000305{0} has left.";
 
 		public void Write(string path)
