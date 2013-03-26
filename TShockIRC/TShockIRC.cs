@@ -151,9 +151,7 @@ namespace TShockIRC
 			};
 			ircClient.Connect(config.Server, config.Port, config.SSL, ircInfo);
 			ircClient.Registered += OnIRCRegistered;
-
-			ctcpClient = new CtcpClient(ircClient);
-			ctcpClient.ClientVersion = "TShockIRC v" + Assembly.GetExecutingAssembly().GetName().Version;
+			ctcpClient = new CtcpClient(ircClient) { ClientVersion = "TShockIRC v" + Assembly.GetExecutingAssembly().GetName().Version };
 		}
 		void OnLeave(int plr)
 		{
@@ -262,6 +260,7 @@ namespace TShockIRC
 		}
 		void IRCRestart(CommandArgs e)
 		{
+			ircClient.Quit("Restarting...");
 			IrcUserRegistrationInfo ircInfo = new IrcUserRegistrationInfo()
 			{
 				NickName = config.Nick,
@@ -269,7 +268,14 @@ namespace TShockIRC
 				UserName = config.UserName,
 				UserModes = new List<char> { 'i', 'w' }
 			};
+			ircClient = new IrcClient();
 			ircClient.Connect(config.Server, config.Port, config.SSL, ircInfo);
+			ircClient.Registered += OnIRCRegistered;
+			ctcpClient = new CtcpClient(ircClient) { ClientVersion = "TShockIRC v" + Assembly.GetExecutingAssembly().GetName().Version };
+
+			ircChannels.Clear();
+			ircUsers.Clear();
+			loggedIn.Clear();
 			e.Player.SendInfoMessage("Restarted the IRC bot.");
 		}
 
