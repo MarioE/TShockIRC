@@ -46,7 +46,7 @@ namespace TShockIRC
 				}
 			}
 		}
-		public static List<string> Parse(string text, bool keepQuotes = false)
+		public static List<string> Parse(string text)
 		{
 			text = System.Text.RegularExpressions.Regex.Replace(text.Trim(), @"\s+", " ");
 
@@ -66,7 +66,7 @@ namespace TShockIRC
 				}
 				if ((text[i] == ' ' || i == text.Length - 1) && !quotes)
 				{
-					Parameters.Add(temp.StartsWith("\"") && !keepQuotes ? temp.Substring(1, temp.Length - 2) : temp);
+					Parameters.Add(temp.StartsWith("\"") ? temp.Substring(1, temp.Length - 2) : temp);
 					temp = "";
 				}
 			}
