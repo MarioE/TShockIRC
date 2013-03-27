@@ -401,7 +401,7 @@ namespace TShockIRC
 				senderGroup = TShock.Utils.GetGroup(TShock.Config.DefaultGuestGroupName);
 			}
 
-			IRCCommand.Execute(ircClient, e.Source, senderGroup, (IIrcMessageTarget)((IrcUser)e.Source), e.Text.Substring(config.BotPrefix.Length));
+			IRCCommand.Execute(ircClient, e.Source, senderGroup, (IIrcMessageTarget)((IrcUser)e.Source), e.Text);
 		}
 
 		void OnChannelJoined(object sender, IrcChannelUserEventArgs e)
