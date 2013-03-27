@@ -88,27 +88,13 @@ namespace TShockIRC
 							}
 						}
 
-						if (String.IsNullOrWhiteSpace(tsPlr.Group.Prefix))
-						{
-							ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerCommandNoPFixMessageFormat, tsPlr.Name, text.Substring(1)));
-						}
-						else
-						{
-							ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text.Substring(1)));
-						}
+						ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text.Substring(1)));
 					}
 				}
 			}
 			else
 			{
-				if (String.IsNullOrWhiteSpace(tsPlr.Group.Prefix))
-				{
-					ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatNoPFixMessageFormat, tsPlr.Name, text));
-				}
-				else
-				{
-					ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
-				}
+				ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
 			}
 		}
 		void OnGetData(GetDataEventArgs e)
@@ -484,8 +470,8 @@ namespace TShockIRC
 				}
 				else
 				{
-					TSPlayer.Server.SendMessage(String.Format(config.IRCChatNoPFixMessageFormat, e.Source.Name, text), Color.White);
-					TSPlayer.All.SendMessage(String.Format(config.IRCChatNoPFixMessageFormat, e.Source.Name, text), Color.White);
+					TSPlayer.Server.SendMessage(String.Format(config.IRCChatMessageFormat, "", e.Source.Name, text), Color.White);
+					TSPlayer.All.SendMessage(String.Format(config.IRCChatMessageFormat, "", e.Source.Name, text), Color.White);
 				}
 			}
 		}
