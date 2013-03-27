@@ -409,16 +409,13 @@ namespace TShockIRC
 		}
 		void OnIRCMessageReceived(object sender, IrcMessageEventArgs e)
 		{
-			if (e.Text.StartsWith(config.BotPrefix))
+			Group senderGroup;
+			if (!loggedIn.TryGetValue((IrcUser)e.Source, out senderGroup))
 			{
-				Group senderGroup;
-				if (!loggedIn.TryGetValue((IrcUser)e.Source, out senderGroup))
-				{
-					senderGroup = TShock.Utils.GetGroup(TShock.Config.DefaultGuestGroupName);
-				}
-
-				IRCCommand.Execute(ircClient, e.Source, senderGroup, (IIrcMessageTarget)((IrcUser)e.Source), e.Text.Substring(config.BotPrefix.Length));
+				senderGroup = TShock.Utils.GetGroup(TShock.Config.DefaultGuestGroupName);
 			}
+
+			IRCCommand.Execute(ircClient, e.Source, senderGroup, (IIrcMessageTarget)((IrcUser)e.Source), e.Text.Substring(config.BotPrefix.Length));
 		}
 
 		void OnChannelJoined(object sender, IrcChannelUserEventArgs e)
