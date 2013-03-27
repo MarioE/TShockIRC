@@ -104,6 +104,10 @@ namespace TShockIRC
 				case PacketTypes.TileGetSection:
 					TSPlayer tsPlr = TShock.Players[e.Msg.whoAmI];
 					ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerJoinMessageFormat, tsPlr.Name));
+                    if (config.LogIPs)
+                    {
+                        ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerJoinIPMessageFormat, tsPlr.Name, tsPlr.IP));
+                    }
 					break;
 			}
 		}
