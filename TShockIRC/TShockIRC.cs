@@ -88,27 +88,13 @@ namespace TShockIRC
 							}
 						}
 
-						if (String.IsNullOrWhiteSpace(tsPlr.Group.Prefix))
-						{
-							ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerCommandNoPFixMessageFormat, tsPlr.Name, text.Substring(1)));
-						}
-						else
-						{
-							ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text.Substring(1)));
-						}
+						ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text.Substring(1)));
 					}
 				}
 			}
 			else
 			{
-				if (String.IsNullOrWhiteSpace(tsPlr.Group.Prefix))
-				{
-					ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatNoPFixMessageFormat, tsPlr.Name, text));
-				}
-				else
-				{
-					ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
-				}
+				ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
 			}
 		}
 		void OnGetData(GetDataEventArgs e)
@@ -155,9 +141,7 @@ namespace TShockIRC
 			};
 			ircClient.Connect(config.Server, config.Port, config.SSL, ircInfo);
 			ircClient.Registered += OnIRCRegistered;
-
-			ctcpClient = new CtcpClient(ircClient);
-			ctcpClient.ClientVersion = "TShockIRC v" + Assembly.GetExecutingAssembly().GetName().Version;
+			ctcpClient = new CtcpClient(ircClient) { ClientVersion = "TShockIRC v" + Assembly.GetExecutingAssembly().GetName().Version };
 		}
 		void OnLeave(int plr)
 		{
@@ -266,6 +250,7 @@ namespace TShockIRC
 		}
 		void IRCRestart(CommandArgs e)
 		{
+			ircClient.Quit("Restarting...");
 			IrcUserRegistrationInfo ircInfo = new IrcUserRegistrationInfo()
 			{
 				NickName = config.Nick,
@@ -273,7 +258,14 @@ namespace TShockIRC
 				UserName = config.UserName,
 				UserModes = new List<char> { 'i', 'w' }
 			};
+			ircClient = new IrcClient();
 			ircClient.Connect(config.Server, config.Port, config.SSL, ircInfo);
+			ircClient.Registered += OnIRCRegistered;
+			ctcpClient = new CtcpClient(ircClient) { ClientVersion = "TShockIRC v" + Assembly.GetExecutingAssembly().GetName().Version };
+
+			ircChannels.Clear();
+			ircUsers.Clear();
+			loggedIn.Clear();
 			e.Player.SendInfoMessage("Restarted the IRC bot.");
 		}
 
@@ -407,16 +399,13 @@ namespace TShockIRC
 		}
 		void OnIRCMessageReceived(object sender, IrcMessageEventArgs e)
 		{
-			if (e.Text.StartsWith(config.BotPrefix))
+			Group senderGroup;
+			if (!loggedIn.TryGetValue((IrcUser)e.Source, out senderGroup))
 			{
-				Group senderGroup;
-				if (!loggedIn.TryGetValue((IrcUser)e.Source, out senderGroup))
-				{
-					senderGroup = TShock.Utils.GetGroup(TShock.Config.DefaultGuestGroupName);
-				}
-
-				IRCCommand.Execute(ircClient, e.Source, senderGroup, (IIrcMessageTarget)((IrcUser)e.Source), e.Text.Substring(config.BotPrefix.Length));
+				senderGroup = TShock.Utils.GetGroup(TShock.Config.DefaultGuestGroupName);
 			}
+
+			IRCCommand.Execute(ircClient, e.Source, senderGroup, (IIrcMessageTarget)((IrcUser)e.Source), e.Text.Substring(config.BotPrefix.Length));
 		}
 
 		void OnChannelJoined(object sender, IrcChannelUserEventArgs e)
@@ -485,8 +474,8 @@ namespace TShockIRC
 				}
 				else
 				{
-					TSPlayer.Server.SendMessage(String.Format(config.IRCChatNoPFixMessageFormat, e.Source.Name, text), Color.White);
-					TSPlayer.All.SendMessage(String.Format(config.IRCChatNoPFixMessageFormat, e.Source.Name, text), Color.White);
+					TSPlayer.Server.SendMessage(String.Format(config.IRCChatMessageFormat, "", e.Source.Name, text), Color.White);
+					TSPlayer.All.SendMessage(String.Format(config.IRCChatMessageFormat, "", e.Source.Name, text), Color.White);
 				}
 			}
 		}
