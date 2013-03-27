@@ -14,6 +14,7 @@ namespace TShockIRC
 		public string Channel = "#terraria";
 		public string ChannelKey = "";
 		public bool LogCommands = false;
+        public bool LogIPs = false;
 		public string Nick = "TShock";
 		public string NickServPassword = "";
 		public short Port = 6667;
