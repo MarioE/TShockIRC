@@ -73,7 +73,7 @@ namespace TShockIRC
 			{
 				if (text.Length > 1)
 				{
-					if (text.StartsWith("/me ") && tsPlr.Group.HasPermission(Permissions.cantalkinthird))
+					if (text.StartsWith("/me ") && tsPlr.Group.HasPermission(Permissions.cantalkinthird) && !e.Handled && !tsPlr.mute)
 					{
 						ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerActionMessageFormat, tsPlr.Name, text.Substring(4)));
 					}
@@ -94,7 +94,8 @@ namespace TShockIRC
 			}
 			else
 			{
-				ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
+                if (e.Handled | tsPlr.mute) return;
+                ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
 			}
 		}
 		void OnGetData(GetDataEventArgs e)
