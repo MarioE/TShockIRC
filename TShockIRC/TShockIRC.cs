@@ -51,7 +51,7 @@ namespace TShockIRC
 			if (disposing)
 			{
 				GameHooks.Initialize -= OnInitialize;
-				NetHooks.GetData -= OnGetData;
+				NetHooks.GreetPlayer -= OnGreetPlayer;
 				ServerHooks.Chat -= OnChat;
 				ServerHooks.Leave -= OnLeave;
 
@@ -61,9 +61,25 @@ namespace TShockIRC
 		public override void Initialize()
 		{
 			GameHooks.Initialize += OnInitialize;
-			NetHooks.GetData += OnGetData;
+			NetHooks.GreetPlayer += OnGreetPlayer;
 			ServerHooks.Chat += OnChat;
 			ServerHooks.Leave += OnLeave;
+		}
+		void SendMessage(IIrcMessageTarget target, string msg)
+		{
+			msg = msg.Replace("\0", "");
+			msg = msg.Replace("\r", "");
+			msg = msg.Replace("\n", "");
+
+			ircClient.LocalUser.SendMessage(target, msg);
+		}
+		void SendMessage(string target, string msg)
+		{
+			msg = msg.Replace("\0", "");
+			msg = msg.Replace("\r", "");
+			msg = msg.Replace("\n", "");
+
+			ircClient.LocalUser.SendMessage(target, msg);
 		}
 
 		void OnChat(messageBuffer msg, int plr, string text, HandledEventArgs e)
@@ -75,7 +91,7 @@ namespace TShockIRC
 				{
 					if (text.StartsWith("/me ") && tsPlr.Group.HasPermission(Permissions.cantalkinthird) && !e.Handled && !tsPlr.mute)
 					{
-						ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerActionMessageFormat, tsPlr.Name, text.Substring(4)));
+						SendMessage(config.Channel, String.Format(config.ServerActionMessageFormat, tsPlr.Name, text.Substring(4)));
 					}
 					else if (config.LogCommands)
 					{
@@ -88,28 +104,23 @@ namespace TShockIRC
 							}
 						}
 
-						ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text.Substring(1)));
+						SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text.Substring(1)));
 					}
 				}
 			}
 			else
 			{
                 if (e.Handled | tsPlr.mute) return;
-                ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
+                SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
 			}
 		}
-		void OnGetData(GetDataEventArgs e)
+		void OnGreetPlayer(int plr, HandledEventArgs e)
 		{
-			switch (e.MsgID)
+			TSPlayer tsPlr = TShock.Players[plr];
+			SendMessage(config.Channel, String.Format(config.ServerJoinMessageFormat, tsPlr.Name));
+			if (config.LogIPs)
 			{
-				case PacketTypes.TileGetSection:
-					TSPlayer tsPlr = TShock.Players[e.Msg.whoAmI];
-					ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerJoinMessageFormat, tsPlr.Name));
-                    if (config.LogIPs)
-                    {
-                        ircClient.LocalUser.SendMessage(config.AdminChannel, String.Format(config.ServerJoinIPMessageFormat, tsPlr.Name, tsPlr.IP));
-                    }
-					break;
+				SendMessage(config.AdminChannel, String.Format(config.ServerJoinIPMessageFormat, tsPlr.Name, tsPlr.IP));
 			}
 		}
 		void OnInitialize()
@@ -148,7 +159,7 @@ namespace TShockIRC
 		{
 			if (TShock.Players[plr] != null && !String.IsNullOrEmpty(TShock.Players[plr].Name))
 			{
-				ircClient.LocalUser.SendMessage(config.Channel, String.Format(config.ServerLeaveMessageFormat, TShock.Players[plr].Name));
+				SendMessage(config.Channel, String.Format(config.ServerLeaveMessageFormat, TShock.Players[plr].Name));
 			}
 		}
 
@@ -274,7 +285,7 @@ namespace TShockIRC
 		{
 			if (e.Length == 1)
 			{
-				ircClient.LocalUser.SendMessage(e.SendTo, "\u00035Syntax: " + config.BotPrefix + e[0] + " <command> [arguments...]");
+				SendMessage(e.SendTo, "\u00035Syntax: " + config.BotPrefix + e[0] + " <command> [arguments...]");
 				return;
 			}
 
@@ -283,7 +294,7 @@ namespace TShockIRC
 
 			if (commands.Count() == 0)
 			{
-				ircClient.LocalUser.SendMessage(e.SendTo, "\u00035Invalid command.");
+				SendMessage(e.SendTo, "\u00035Invalid command.");
 			}
 			else
 			{
@@ -291,11 +302,11 @@ namespace TShockIRC
 				{
 					if (!command.CanRun(tsIrcPlayer))
 					{
-						ircClient.LocalUser.SendMessage(e.SendTo, "\u00035You do not have access to that command.");
+						SendMessage(e.SendTo, "\u00035You do not have access to that command.");
 					}
 					else if (!command.AllowServer)
 					{
-						ircClient.LocalUser.SendMessage(e.SendTo, "\u00035You must use this command in-game.");
+						SendMessage(e.SendTo, "\u00035You must use this command in-game.");
 					}
 					else
 					{
@@ -304,7 +315,7 @@ namespace TShockIRC
 				}
 				foreach (string msg in tsIrcPlayer.messages)
 				{
-					ircClient.LocalUser.SendMessage(e.SendTo, msg);
+					SendMessage(e.SendTo, msg);
 				}
 			}
 		}
@@ -312,7 +323,7 @@ namespace TShockIRC
 		{
 			if (e.Length != 3)
 			{
-				ircClient.LocalUser.SendMessage(e.SendTo, "\u00035Syntax: " + config.BotPrefix + e[0] + " <user> <password>");
+				SendMessage(e.SendTo, "\u00035Syntax: " + config.BotPrefix + e[0] + " <user> <password>");
 				return;
 			}
 
@@ -320,19 +331,19 @@ namespace TShockIRC
 
 			if (user == null)
 			{
-				ircClient.LocalUser.SendMessage(e.SendTo, "\u00035Invalid user.");
+				SendMessage(e.SendTo, "\u00035Invalid user.");
 			}
 			else
 			{
 				if (user.Password.ToUpper() == TShock.Utils.HashPassword(e[2]).ToUpper())
 				{
-					ircClient.LocalUser.SendMessage(e.SendTo, "\u00033You have logged in as " + e[1] + ".");
+					SendMessage(e.SendTo, "\u00033You have logged in as " + e[1] + ".");
 					loggedIn.Remove((IrcUser)e.Sender);
 					loggedIn.Add((IrcUser)e.Sender, TShock.Utils.GetGroup(user.Group));
 				}
 				else
 				{
-					ircClient.LocalUser.SendMessage(e.SendTo, "\u00035Incorrect password!");
+					SendMessage(e.SendTo, "\u00035Incorrect password!");
 				}
 			}
 		}
@@ -341,11 +352,11 @@ namespace TShockIRC
 			if (loggedIn.ContainsKey((IrcUser)e.Sender))
 			{
 				loggedIn.Remove((IrcUser)e.Sender);
-				ircClient.LocalUser.SendMessage(e.SendTo, "\u00033You have logged out.");
+				SendMessage(e.SendTo, "\u00033You have logged out.");
 			}
 			else
 			{
-				ircClient.LocalUser.SendMessage(e.SendTo, "\u00035You are not logged in.");
+				SendMessage(e.SendTo, "\u00035You are not logged in.");
 			}
 		}
 		void Players(object sender, IRCCommandEventArgs e)
@@ -371,12 +382,12 @@ namespace TShockIRC
 
 			if (numPlayers == 0)
 			{
-				ircClient.LocalUser.SendMessage(e.SendTo, "0 players currently on.");
+				SendMessage(e.SendTo, "0 players currently on.");
 			}
 			else
 			{
-				ircClient.LocalUser.SendMessage(e.SendTo, numPlayers + " player(s) currently on:");
-				ircClient.LocalUser.SendMessage(e.SendTo, players + ".");
+				SendMessage(e.SendTo, numPlayers + " player(s) currently on:");
+				SendMessage(e.SendTo, players + ".");
 			}
 		}
 

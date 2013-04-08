@@ -14,7 +14,7 @@ namespace TShockIRC
 		public string Channel = "#terraria";
 		public string ChannelKey = "";
 		public bool LogCommands = false;
-        public bool LogIPs = false;
+		public bool LogIPs = false;
 		public string Nick = "TShock";
 		public string NickServPassword = "";
 		public short Port = 6667;
@@ -34,7 +34,7 @@ namespace TShockIRC
 		public string ServerCommandMessageFormat = "\u000302{0}<{1}>\u000f executed /{2}";
 		public string ServerChatMessageFormat = "\u000302{0}<{1}>\u000f {2}";
 		public string ServerJoinMessageFormat = "\u000303{0} has joined.";
-        public string ServerJoinIPMessageFormat = "\u000303{0} has joined. IP: {1}";
+		public string ServerJoinIPMessageFormat = "\u000303{0} has joined. IP: {1}";
 		public string ServerLeaveMessageFormat = "\u000305{0} has left.";
 
 		public void Write(string path)
