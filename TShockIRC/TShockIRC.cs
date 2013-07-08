@@ -328,8 +328,7 @@ namespace TShockIRC
 			}
 
 			User user = TShock.Users.GetUserByName(e[1]);
-
-			if (user == null)
+			if (user == null || e[1] == "")
 			{
 				SendMessage(e.SendTo, "\u00035Invalid user.");
 			}
