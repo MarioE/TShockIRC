@@ -5,16 +5,16 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Hooks;
 using IrcDotNet;
 using IrcDotNet.Ctcp;
 using Terraria;
+using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.DB;
 
 namespace TShockIRC
 {
-	[APIVersion(1, 12)]
+	[ApiVersion(1, 12)]
 	public class TShockIRC : TerrariaPlugin
 	{
 		public override string Author
@@ -50,20 +50,20 @@ namespace TShockIRC
 		{
 			if (disposing)
 			{
-				GameHooks.Initialize -= OnInitialize;
-				NetHooks.GreetPlayer -= OnGreetPlayer;
-				ServerHooks.Chat -= OnChat;
-				ServerHooks.Leave -= OnLeave;
+				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
+				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreetPlayer);
+				ServerApi.Hooks.ServerChat.Deregister(this, OnChat);
+				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
 
 				ircClient.Dispose();
 			}
 		}
 		public override void Initialize()
 		{
-			GameHooks.Initialize += OnInitialize;
-			NetHooks.GreetPlayer += OnGreetPlayer;
-			ServerHooks.Chat += OnChat;
-			ServerHooks.Leave += OnLeave;
+			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
+			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreetPlayer);
+			ServerApi.Hooks.ServerChat.Register(this, OnChat);
+			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
 		}
 		void SendMessage(IIrcMessageTarget target, string msg)
 		{
@@ -82,20 +82,20 @@ namespace TShockIRC
 			ircClient.LocalUser.SendMessage(target, msg);
 		}
 
-		void OnChat(messageBuffer msg, int plr, string text, HandledEventArgs e)
+		void OnChat(ServerChatEventArgs e)
 		{
-			TSPlayer tsPlr = TShock.Players[plr];
-			if (text.StartsWith("/"))
+			TSPlayer tsPlr = TShock.Players[e.Who];
+			if (e.Text.StartsWith("/"))
 			{
-				if (text.Length > 1)
+				if (e.Text.Length > 1)
 				{
-					if (text.StartsWith("/me ") && tsPlr.Group.HasPermission(Permissions.cantalkinthird) && !e.Handled && !tsPlr.mute)
+					if (e.Text.StartsWith("/me ") && tsPlr.Group.HasPermission(Permissions.cantalkinthird) && !e.Handled && !tsPlr.mute)
 					{
-						SendMessage(config.Channel, String.Format(config.ServerActionMessageFormat, tsPlr.Name, text.Substring(4)));
+						SendMessage(config.Channel, String.Format(config.ServerActionMessageFormat, tsPlr.Name, e.Text.Substring(4)));
 					}
 					else if (config.LogCommands)
 					{
-						IEnumerable<Command> commands = Commands.ChatCommands.Where(c => c.HasAlias(IRCCommand.Parse(text.Substring(1))[0]));
+						IEnumerable<Command> commands = Commands.ChatCommands.Where(c => c.HasAlias(IRCCommand.Parse(e.Text.Substring(1))[0]));
 						foreach (Command command in commands)
 						{
 							if (!command.DoLog)
@@ -104,26 +104,29 @@ namespace TShockIRC
 							}
 						}
 
-						SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text.Substring(1)));
+						SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text.Substring(1)));
 					}
 				}
 			}
 			else
 			{
-                if (e.Handled | tsPlr.mute) return;
-                SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, text));
+				if ((e.Handled || tsPlr.mute) && tsPlr.Group.HasPermission(Permissions.canchat))
+				{
+					return;
+				}
+                SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text));
 			}
 		}
-		void OnGreetPlayer(int plr, HandledEventArgs e)
+		void OnGreetPlayer(GreetPlayerEventArgs e)
 		{
-			TSPlayer tsPlr = TShock.Players[plr];
+			TSPlayer tsPlr = TShock.Players[e.Who];
 			SendMessage(config.Channel, String.Format(config.ServerJoinMessageFormat, tsPlr.Name));
 			if (config.LogIPs)
 			{
 				SendMessage(config.AdminChannel, String.Format(config.ServerJoinIPMessageFormat, tsPlr.Name, tsPlr.IP));
 			}
 		}
-		void OnInitialize()
+		void OnInitialize(EventArgs e)
 		{
 			Commands.ChatCommands.Add(new Command("tshockirc.op", IRCKick, "irckick"));
 			Commands.ChatCommands.Add(new Command("tshockirc.manage", IRCReload, "ircreload"));
@@ -155,11 +158,11 @@ namespace TShockIRC
 			ircClient.Registered += OnIRCRegistered;
 			ctcpClient = new CtcpClient(ircClient) { ClientVersion = "TShockIRC v" + Assembly.GetExecutingAssembly().GetName().Version };
 		}
-		void OnLeave(int plr)
+		void OnLeave(LeaveEventArgs e)
 		{
-			if (TShock.Players[plr] != null && !String.IsNullOrEmpty(TShock.Players[plr].Name))
+			if (TShock.Players[e.Who] != null && !String.IsNullOrEmpty(TShock.Players[e.Who].Name))
 			{
-				SendMessage(config.Channel, String.Format(config.ServerLeaveMessageFormat, TShock.Players[plr].Name));
+				SendMessage(config.Channel, String.Format(config.ServerLeaveMessageFormat, TShock.Players[e.Who].Name));
 			}
 		}
 
