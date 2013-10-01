@@ -14,7 +14,7 @@ using TShockAPI.DB;
 
 namespace TShockIRC
 {
-	[ApiVersion(1, 12)]
+	[ApiVersion(1, 14)]
 	public class TShockIRC : TerrariaPlugin
 	{
 		public override string Author
