@@ -43,7 +43,7 @@ namespace TShockIRC
 		public TShockIRC(Main game)
 			: base(game)
 		{
-			Order = -5;
+			Order = 5;
 		}
 
 		protected override void Dispose(bool disposing)
