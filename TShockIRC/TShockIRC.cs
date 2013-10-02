@@ -85,36 +85,39 @@ namespace TShockIRC
 		void OnChat(ServerChatEventArgs e)
 		{
 			TSPlayer tsPlr = TShock.Players[e.Who];
-			if (e.Text.StartsWith("/"))
+			if (e.Text != null && tsPlr != null)
 			{
-				if (e.Text.Length > 1)
+				if (e.Text.StartsWith("/"))
 				{
-					if (e.Text.StartsWith("/me ") && tsPlr.Group.HasPermission(Permissions.cantalkinthird) && !e.Handled && !tsPlr.mute)
+					if (e.Text.Length > 1)
 					{
-						SendMessage(config.Channel, String.Format(config.ServerActionMessageFormat, tsPlr.Name, e.Text.Substring(4)));
-					}
-					else if (config.LogCommands)
-					{
-						IEnumerable<Command> commands = Commands.ChatCommands.Where(c => c.HasAlias(IRCCommand.Parse(e.Text.Substring(1))[0]));
-						foreach (Command command in commands)
+						if (e.Text.StartsWith("/me ") && tsPlr.Group.HasPermission(Permissions.cantalkinthird) && !e.Handled && !tsPlr.mute)
 						{
-							if (!command.DoLog)
-							{
-								return;
-							}
+							SendMessage(config.Channel, String.Format(config.ServerActionMessageFormat, tsPlr.Name, e.Text.Substring(4)));
 						}
+						else if (config.LogCommands)
+						{
+							IEnumerable<Command> commands = Commands.ChatCommands.Where(c => c.HasAlias(IRCCommand.Parse(e.Text.Substring(1))[0]));
+							foreach (Command command in commands)
+							{
+								if (!command.DoLog)
+								{
+									return;
+								}
+							}
 
-						SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text.Substring(1)));
+							SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text.Substring(1)));
+						}
 					}
 				}
-			}
-			else
-			{
-				if ((e.Handled || tsPlr.mute) && tsPlr.Group.HasPermission(Permissions.canchat))
+				else
 				{
-					return;
+					if (e.Handled || tsPlr.mute || !tsPlr.Group.HasPermission(Permissions.canchat))
+					{
+						return;
+					}
+					SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text));
 				}
-                SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text));
 			}
 		}
 		void OnGreetPlayer(GreetPlayerEventArgs e)
