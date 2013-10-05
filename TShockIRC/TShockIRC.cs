@@ -163,7 +163,8 @@ namespace TShockIRC
 		}
 		void OnLeave(LeaveEventArgs e)
 		{
-			if (TShock.Players[e.Who] != null && !String.IsNullOrEmpty(TShock.Players[e.Who].Name))
+			if (TShock.Players[e.Who] != null && !String.IsNullOrEmpty(TShock.Players[e.Who].Name)
+				&& !TShock.Players[e.Who].SilentKickInProgress)
 			{
 				SendMessage(config.Channel, String.Format(config.ServerLeaveMessageFormat, TShock.Players[e.Who].Name));
 			}
