@@ -14,6 +14,7 @@ namespace TShockIRC
 			: base(name)
 		{
 			Group = group;
+			UserAccountName = name;
 		}
 		
 		public override void SendMessage(string msg)
