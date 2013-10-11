@@ -1,9 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Linq;
-using System.Text;
+using Newtonsoft.Json;
 
 namespace TShockIRC
 {
@@ -13,8 +10,6 @@ namespace TShockIRC
 		public string AdminChannelKey = "";
 		public string Channel = "#terraria";
 		public string ChannelKey = "";
-		public bool LogCommands = false;
-		public bool LogIPs = false;
 		public string Nick = "TShock";
 		public string NickServPassword = "";
 		public short Port = 6667;
@@ -30,6 +25,7 @@ namespace TShockIRC
 		public string IRCKickMessageFormat = "(IRC) {0} was kicked ({1}).";
 		public string IRCLeaveMessageFormat = "(IRC) {0} has left ({1}).";
 		public string IRCQuitMessageFormat = "(IRC) {0} has quit ({1}).";
+		public string ModesRequired = "qaohv";
 		public string ServerActionMessageFormat = "\u000302\u0002* {0}\u000f {1}";
 		public string ServerCommandMessageFormat = "\u000302{0}<{1}>\u000f executed /{2}";
 		public string ServerChatMessageFormat = "\u000302{0}<{1}>\u000f {2}";

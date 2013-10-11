@@ -9,9 +9,9 @@ namespace TShockIRC
 {
 	public class IRCCommand
 	{
-		private IRCCommandDelegate command;
-		private string[] names;
-		private string permission;
+		IRCCommandDelegate command;
+		string[] names;
+		string permission;
 
 		public static List<IRCCommand> Commands = new List<IRCCommand>();
 

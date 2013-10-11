@@ -21,16 +21,17 @@ namespace TShockIRC
 		{
 			get { return "MarioE"; }
 		}
-		private Config config = new Config();
-		private CtcpClient ctcpClient;
+		Config config = new Config();
+		CtcpClient ctcpClient;
 		public override string Description
 		{
 			get { return "Acts as an IRC bot for the server."; }
 		}
-		private List<IrcChannel> ircChannels = new List<IrcChannel>();
-		private IrcClient ircClient = new IrcClient();
-		private List<IrcUser> ircUsers = new List<IrcUser>();
-		private Dictionary<IrcUser, Group> loggedIn = new Dictionary<IrcUser, Group>();
+		List<IrcChannel> ircChannels = new List<IrcChannel>();
+		IrcClient ircClient = new IrcClient();
+		List<IrcUser> ircUsers = new List<IrcUser>();
+		Dictionary<IrcUser, Group> loggedIn = new Dictionary<IrcUser, Group>();
+		const int maxCharsPerLine = 400;
 		public override string Name
 		{
 			get { return "TShockIRC"; }
@@ -71,7 +72,19 @@ namespace TShockIRC
 			msg = msg.Replace("\r", "");
 			msg = msg.Replace("\n", "");
 
-			ircClient.LocalUser.SendMessage(target, msg);
+			StringBuilder sb = new StringBuilder();
+			foreach (string word in msg.Split(' '))
+			{
+				if (sb.Length + word.Length + 1 > maxCharsPerLine)
+				{
+					ircClient.LocalUser.SendMessage(target, sb.ToString());
+					sb.Clear();
+				}
+				else
+				{
+					sb.Append(word).Append(" ");
+				}
+			}
 		}
 		void SendMessage(string target, string msg)
 		{
@@ -79,7 +92,19 @@ namespace TShockIRC
 			msg = msg.Replace("\r", "");
 			msg = msg.Replace("\n", "");
 
-			ircClient.LocalUser.SendMessage(target, msg);
+			StringBuilder sb = new StringBuilder();
+			foreach (string word in msg.Split(' '))
+			{
+				if (sb.Length + word.Length + 1 > maxCharsPerLine)
+				{
+					ircClient.LocalUser.SendMessage(target, sb.ToString());
+					sb.Clear();
+				}
+				else
+				{
+					sb.Append(word).Append(" ");
+				}
+			}
 		}
 
 		void OnChat(ServerChatEventArgs e)
@@ -93,40 +118,45 @@ namespace TShockIRC
 					{
 						if (e.Text.StartsWith("/me ") && tsPlr.Group.HasPermission(Permissions.cantalkinthird) && !e.Handled && !tsPlr.mute)
 						{
-							SendMessage(config.Channel, String.Format(config.ServerActionMessageFormat, tsPlr.Name, e.Text.Substring(4)));
-						}
-						else if (config.LogCommands)
-						{
-							IEnumerable<Command> commands = Commands.ChatCommands.Where(c => c.HasAlias(IRCCommand.Parse(e.Text.Substring(1))[0]));
-							foreach (Command command in commands)
+							if (!String.IsNullOrEmpty(config.ServerActionMessageFormat))
 							{
-								if (!command.DoLog)
-								{
-									return;
-								}
+								SendMessage(config.Channel, String.Format(
+									config.ServerActionMessageFormat, tsPlr.Name, e.Text.Substring(4)));
 							}
-
-							SendMessage(config.AdminChannel, String.Format(config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text.Substring(1)));
+						}
+						else if (!Commands.ChatCommands.Where(c => c.HasAlias(IRCCommand.Parse(e.Text.Substring(1))[0])).Any(c => c.DoLog))
+						{
+							if (!String.IsNullOrEmpty(config.ServerCommandMessageFormat))
+							{
+								SendMessage(config.AdminChannel, String.Format(
+									config.ServerCommandMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text.Substring(1)));
+							}
 						}
 					}
 				}
 				else
 				{
-					if (e.Handled || tsPlr.mute || !tsPlr.Group.HasPermission(Permissions.canchat))
+					if (!e.Handled && !tsPlr.mute && tsPlr.Group.HasPermission(Permissions.canchat) &&
+						!String.IsNullOrEmpty(config.ServerChatMessageFormat))
 					{
-						return;
+						SendMessage(config.Channel, String.Format(
+							config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text));
 					}
-					SendMessage(config.Channel, String.Format(config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text));
 				}
 			}
 		}
 		void OnGreetPlayer(GreetPlayerEventArgs e)
 		{
 			TSPlayer tsPlr = TShock.Players[e.Who];
-			SendMessage(config.Channel, String.Format(config.ServerJoinMessageFormat, tsPlr.Name));
-			if (config.LogIPs)
+			if (!String.IsNullOrEmpty(config.ServerJoinMessageFormat))
 			{
-				SendMessage(config.AdminChannel, String.Format(config.ServerJoinIPMessageFormat, tsPlr.Name, tsPlr.IP));
+				SendMessage(config.Channel, String.Format(
+					config.ServerJoinMessageFormat, tsPlr.Name));
+			}
+			if (!String.IsNullOrEmpty(config.ServerJoinIPMessageFormat))
+			{
+				SendMessage(config.AdminChannel, String.Format(
+					config.ServerJoinIPMessageFormat, tsPlr.Name, tsPlr.IP));
 			}
 		}
 		void OnInitialize(EventArgs e)
@@ -166,7 +196,11 @@ namespace TShockIRC
 			TSPlayer tsplr = TShock.Players[e.Who];
 			if (tsplr != null && tsplr.ReceivedInfo && tsplr.State >= 3 && !tsplr.SilentKickInProgress)
 			{
-				SendMessage(config.Channel, String.Format(config.ServerLeaveMessageFormat, TShock.Players[e.Who].Name));
+				if (!String.IsNullOrEmpty(config.ServerLeaveMessageFormat))
+				{
+					SendMessage(config.Channel, String.Format(
+						config.ServerLeaveMessageFormat, TShock.Players[e.Who].Name));
+				}
 			}
 		}
 
@@ -187,7 +221,7 @@ namespace TShockIRC
 				if (ircUser.NickName == e.Parameters[0])
 				{
 					ircChannels.Find(ic => ic.Name == config.Channel).Kick(ircUser.NickName, reason);
-					e.Player.SendSuccessMessage("You have kicked " + ircUser.NickName + " (" + reason + ").");
+					e.Player.SendSuccessMessage("You have kicked {0} for {1}.", ircUser.NickName, reason);
 					return;
 				}
 				if (ircUser.NickName.ToLower().StartsWith(e.Parameters[0]))
@@ -203,12 +237,12 @@ namespace TShockIRC
 			}
 			else if (counts > 1)
 			{
-				e.Player.SendErrorMessage("More than one user matched the input (" + counts + ").");
+				e.Player.SendErrorMessage("More than one user matched the input ({0}).", counts);
 			}
 			else
 			{
 				ircChannels.Find(ic => ic.Name == config.Channel).Kick(toKick.NickName, reason);
-				e.Player.SendSuccessMessage("You have kicked " + toKick.NickName + " (" + reason + ").");
+				e.Player.SendSuccessMessage("You have kicked {0} for {1}.", toKick.NickName, reason);
 			}
 		}
 		void IRCKickban(CommandArgs e)
@@ -229,7 +263,7 @@ namespace TShockIRC
 				{
 					ircChannels.Find(ic => ic.Name == config.Channel).SetModes("+b", "*!*@" + ircUser.HostName);
 					ircChannels.Find(ic => ic.Name == config.Channel).Kick(ircUser.NickName, reason);
-					e.Player.SendSuccessMessage("You have kickbanned " + ircUser.NickName + " (" + reason + ").");
+					e.Player.SendSuccessMessage("You have kickbanned {0} for {1}.", ircUser.NickName, reason);
 					return;
 				}
 				if (ircUser.NickName.ToLower().StartsWith(e.Parameters[0]))
@@ -251,7 +285,7 @@ namespace TShockIRC
 			{
 				ircChannels.Find(ic => ic.Name == config.Channel).SetModes("+b", "*!*@" + toKick.HostName);
 				ircChannels.Find(ic => ic.Name == config.Channel).Kick(toKick.NickName, reason);
-				e.Player.SendSuccessMessage("You have kickbanned " + toKick.NickName + " (" + reason + ").");
+				e.Player.SendSuccessMessage("You have kickbanned {0} for {1}.", toKick.NickName, reason);
 			}
 		}
 		void IRCReload(CommandArgs e)
@@ -292,7 +326,7 @@ namespace TShockIRC
 		{
 			if (e.Length == 1)
 			{
-				SendMessage(e.SendTo, "\u00035Syntax: " + config.BotPrefix + e[0] + " <command> [arguments...]");
+				SendMessage(e.SendTo, "\u00035Invalid syntax! Proper syntax: " + config.BotPrefix + e[0] + " <command> [arguments...]");
 				return;
 			}
 
@@ -330,7 +364,7 @@ namespace TShockIRC
 		{
 			if (e.Length != 3)
 			{
-				SendMessage(e.SendTo, "\u00035Syntax: " + config.BotPrefix + e[0] + " <user> <password>");
+				SendMessage(e.SendTo, "\u00035Invalid syntax! Proper syntax: " + config.BotPrefix + e[0] + " <user> <password>");
 				return;
 			}
 
@@ -362,7 +396,7 @@ namespace TShockIRC
 			}
 			else
 			{
-				SendMessage(e.SendTo, "\u00035You are not logged in.");
+				SendMessage(e.SendTo, "\u00035You are not already logged in.");
 			}
 		}
 		void Players(object sender, IRCCommandEventArgs e)
@@ -433,8 +467,13 @@ namespace TShockIRC
 				ircUsers.Add(e.ChannelUser.User);
 				e.ChannelUser.User.Quit += OnUserQuit;
 
-				TSPlayer.Server.SendSuccessMessage(String.Format(config.IRCJoinMessageFormat, e.ChannelUser.User.NickName));
-				TSPlayer.All.SendSuccessMessage(String.Format(config.IRCJoinMessageFormat, e.ChannelUser.User.NickName));
+				if (!String.IsNullOrEmpty(config.IRCJoinMessageFormat))
+				{
+					TSPlayer.Server.SendSuccessMessage(
+						String.Format(config.IRCJoinMessageFormat, e.ChannelUser.User.NickName));
+					TSPlayer.All.SendSuccessMessage(
+						String.Format(config.IRCJoinMessageFormat, e.ChannelUser.User.NickName));
+				}
 			}
 		}
 		void OnChannelKicked(object sender, IrcChannelUserEventArgs e)
@@ -444,8 +483,13 @@ namespace TShockIRC
 				ircUsers.Remove(e.ChannelUser.User);
 				loggedIn.Remove(e.ChannelUser.User);
 
-				TSPlayer.Server.SendErrorMessage(String.Format(config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment));
-				TSPlayer.All.SendErrorMessage(String.Format(config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment));
+				if (!String.IsNullOrEmpty(config.IRCKickMessageFormat))
+				{
+					TSPlayer.Server.SendErrorMessage(
+						String.Format(config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment));
+					TSPlayer.All.SendErrorMessage(
+						String.Format(config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment));
+				}
 			}
 		}
 		void OnChannelLeft(object sender, IrcChannelUserEventArgs e)
@@ -455,12 +499,23 @@ namespace TShockIRC
 				ircUsers.Remove(e.ChannelUser.User);
 				loggedIn.Remove(e.ChannelUser.User);
 
-				TSPlayer.Server.SendErrorMessage(String.Format(config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment));
-				TSPlayer.All.SendErrorMessage(String.Format(config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment));
+				if (!String.IsNullOrEmpty(config.IRCLeaveMessageFormat))
+				{
+					TSPlayer.Server.SendErrorMessage(
+						String.Format(config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment));
+					TSPlayer.All.SendErrorMessage(
+						String.Format(config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment));
+				}
 			}
 		}
 		void OnChannelMessage(object sender, IrcMessageEventArgs e)
 		{
+			if (e.Targets.Count == 0)
+			{
+				return;
+			}
+
+			IrcChannel ircChannel = ((IrcChannel)e.Targets[0]);
 			if (e.Text.StartsWith(config.BotPrefix))
 			{
 				Group senderGroup;
@@ -471,29 +526,62 @@ namespace TShockIRC
 
 				IRCCommand.Execute(ircClient, e.Source, senderGroup, (IIrcMessageTarget)sender, e.Text.Substring(config.BotPrefix.Length));
 			}
-			else if (((IrcChannel)e.Targets[0]).Name == config.Channel)
+			else if (ircChannel.Name == config.Channel)
 			{
+				IrcChannelUser ircChannelUser = ircChannel.GetChannelUser((IrcUser)e.Source);
+				if (!String.IsNullOrEmpty(config.ModesRequired) && ircChannelUser != null)
+				{
+					bool hasMode = false;
+					foreach (char c in config.ModesRequired)
+					{
+						if (ircChannelUser.Modes.Contains(c))
+						{
+							hasMode = true;
+							break;
+						}
+					}
+					if (!hasMode)
+					{
+						return;
+					}
+				}
+
 				string text = e.Text;
-				text = System.Text.RegularExpressions.Regex.Replace(text, "\u0003[0-9]{1,2}", "");
+				text = System.Text.RegularExpressions.Regex.Replace(text, "\u0003[0-9]{1,2}(,[0-9]{1,2})?", "");
 				text = text.Replace("\u0002", "");
 				text = text.Replace("\u000f", "");
 				text = text.Replace("\u000f", "");
 
-				if (text.StartsWith("\u0001ACTION"))
+				if (text.StartsWith("\u0001ACTION") && text.EndsWith("\u0001"))
 				{
-					TSPlayer.Server.SendMessage(String.Format(config.IRCActionMessageFormat, e.Source.Name, text.Substring(8, text.Length - 9)), 205, 133, 63);
-					TSPlayer.All.SendMessage(String.Format(config.IRCActionMessageFormat, e.Source.Name, text.Substring(8, text.Length - 9)), 205, 133, 63);
+					if (!String.IsNullOrEmpty(config.IRCActionMessageFormat))
+					{
+						TSPlayer.Server.SendMessage(
+							String.Format(config.IRCActionMessageFormat, e.Source.Name, text.Substring(8, text.Length - 9)), 205, 133, 63);
+						TSPlayer.All.SendMessage(
+							String.Format(config.IRCActionMessageFormat, e.Source.Name, text.Substring(8, text.Length - 9)), 205, 133, 63);
+					}
 				}
 				else if (loggedIn.ContainsKey((IrcUser)e.Source))
 				{
-					Group group = loggedIn[(IrcUser)e.Source];
-					TSPlayer.Server.SendMessage(String.Format(config.IRCChatMessageFormat, group.Prefix, e.Source.Name, text), group.R, group.G, group.B);
-					TSPlayer.All.SendMessage(String.Format(config.IRCChatMessageFormat, group.Prefix, e.Source.Name, text), group.R, group.G, group.B);
+					if (!String.IsNullOrEmpty(config.IRCChatMessageFormat))
+					{
+						Group group = loggedIn[(IrcUser)e.Source];
+						TSPlayer.Server.SendMessage(
+							String.Format(config.IRCChatMessageFormat, group.Prefix, e.Source.Name, text), group.R, group.G, group.B);
+						TSPlayer.All.SendMessage(
+							String.Format(config.IRCChatMessageFormat, group.Prefix, e.Source.Name, text), group.R, group.G, group.B);
+					}
 				}
 				else
 				{
-					TSPlayer.Server.SendMessage(String.Format(config.IRCChatMessageFormat, "", e.Source.Name, text), Color.White);
-					TSPlayer.All.SendMessage(String.Format(config.IRCChatMessageFormat, "", e.Source.Name, text), Color.White);
+					if (!String.IsNullOrEmpty(config.IRCChatMessageFormat))
+					{
+						TSPlayer.Server.SendMessage(String.Format(
+							config.IRCChatMessageFormat, "", e.Source.Name, text), Color.White);
+						TSPlayer.All.SendMessage(String.Format(
+							config.IRCChatMessageFormat, "", e.Source.Name, text), Color.White);
+					}
 				}
 			}
 		}
@@ -514,8 +602,13 @@ namespace TShockIRC
 			ircUsers.Remove((IrcUser)sender);
 			loggedIn.Remove((IrcUser)sender);
 
-			TSPlayer.Server.SendErrorMessage(String.Format(config.IRCQuitMessageFormat, ((IrcUser)sender).NickName, e.Comment));
-			TSPlayer.All.SendErrorMessage(String.Format(config.IRCQuitMessageFormat, ((IrcUser)sender).NickName, e.Comment));
+			if (!String.IsNullOrEmpty(config.IRCQuitMessageFormat))
+			{
+				TSPlayer.Server.SendErrorMessage(
+					String.Format(config.IRCQuitMessageFormat, ((IrcUser)sender).NickName, e.Comment));
+				TSPlayer.All.SendErrorMessage(
+					String.Format(config.IRCQuitMessageFormat, ((IrcUser)sender).NickName, e.Comment));
+			}
 		}
 	}
 }
