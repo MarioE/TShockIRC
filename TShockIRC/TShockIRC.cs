@@ -85,6 +85,7 @@ namespace TShockIRC
 					sb.Append(word).Append(" ");
 				}
 			}
+			ircClient.LocalUser.SendMessage(target, sb.ToString());
 		}
 		void SendMessage(string target, string msg)
 		{
@@ -105,6 +106,7 @@ namespace TShockIRC
 					sb.Append(word).Append(" ");
 				}
 			}
+			ircClient.LocalUser.SendMessage(target, sb.ToString());
 		}
 
 		void OnChat(ServerChatEventArgs e)
