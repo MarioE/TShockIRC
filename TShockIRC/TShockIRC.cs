@@ -126,7 +126,7 @@ namespace TShockIRC
 									config.ServerActionMessageFormat, tsPlr.Name, e.Text.Substring(4)));
 							}
 						}
-						else if (!Commands.ChatCommands.Where(c => c.HasAlias(IRCCommand.Parse(e.Text.Substring(1))[0])).Any(c => c.DoLog))
+						else if (!Commands.ChatCommands.Where(c => c.HasAlias(e.Text.Substring(1).Split(' ')[0].ToLower())).Any(c => c.DoLog))
 						{
 							if (!String.IsNullOrEmpty(config.ServerCommandMessageFormat))
 							{
@@ -531,10 +531,10 @@ namespace TShockIRC
 			else if (ircChannel.Name == config.Channel)
 			{
 				IrcChannelUser ircChannelUser = ircChannel.GetChannelUser((IrcUser)e.Source);
-				if (!String.IsNullOrEmpty(config.ModesRequired) && ircChannelUser != null)
+				if (!String.IsNullOrEmpty(config.IRCChatModesRequired) && ircChannelUser != null)
 				{
 					bool hasMode = false;
-					foreach (char c in config.ModesRequired)
+					foreach (char c in config.IRCChatModesRequired)
 					{
 						if (ircChannelUser.Modes.Contains(c))
 						{
