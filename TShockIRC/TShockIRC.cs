@@ -126,7 +126,7 @@ namespace TShockIRC
 									config.ServerActionMessageFormat, tsPlr.Name, e.Text.Substring(4)));
 							}
 						}
-						else if (!Commands.ChatCommands.Where(c => c.HasAlias(e.Text.Substring(1).Split(' ')[0].ToLower())).Any(c => c.DoLog))
+						else if (Commands.ChatCommands.Where(c => c.HasAlias(e.Text.Substring(1).Split(' ')[0].ToLower())).Any(c => c.DoLog))
 						{
 							if (!String.IsNullOrEmpty(config.ServerCommandMessageFormat))
 							{
