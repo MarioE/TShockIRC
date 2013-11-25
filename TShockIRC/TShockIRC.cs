@@ -326,7 +326,12 @@ namespace TShockIRC
 					else if (!command.AllowServer)
 						SendMessage(e.SendTo, "\u00035You must use this command in-game.");
 					else
-						command.Run(e.RawText, tsIrcPlayer, e.ParameterRange(2, e.Length - 2).ToList());
+					{
+						var args = e.ParameterRange(2, e.Length - 2).ToList();
+						if (TShockAPI.Hooks.PlayerHooks.OnPlayerCommand(tsIrcPlayer, command.Name, e.RawText, args))
+							return;
+						command.Run(e.RawText, tsIrcPlayer, args);
+					}
 				}
 				foreach (string msg in tsIrcPlayer.messages)
 					SendMessage(e.SendTo, msg);

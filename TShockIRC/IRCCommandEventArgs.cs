@@ -27,6 +27,10 @@ namespace TShockIRC
 			SendTo = sendTo;
 		}
 
+		public string Eol(int index)
+		{
+			return String.Join(" ", parameters, index, parameters.Length - index);
+		}
 		public string[] ParameterRange(int index, int count)
 		{
 			return parameters.ToList().GetRange(index, count).ToArray();
