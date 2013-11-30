@@ -9,31 +9,29 @@ namespace TShockIRC
 {
 	public class IRCCommandEventArgs : EventArgs
 	{
-		private string[] parameters;
-		public int Length { get { return parameters.Length; } }
+		List<string> parameters;
+		public int Length { get { return parameters.Count - 1; } }
 		public string RawText { get; private set; }
-		public Group SenderGroup { get; private set; }
-		public IIrcMessageSource Sender { get; private set; }
-		public IIrcMessageTarget SendTo { get; private set; }
+		public IrcUser Sender { get; private set; }
+		public IIrcMessageTarget Target { get; private set; }
 
-		public string this[int index] { get { return parameters[index]; } }
+		public string this[int index] { get { return parameters[index + 1]; } }
 
-		public IRCCommandEventArgs(string text, IIrcMessageSource sender, Group senderGroup, IIrcMessageTarget sendTo)
+		public IRCCommandEventArgs(string text, IrcUser sender, IIrcMessageTarget target)
 		{
-			parameters = IRCCommand.Parse(text).ToArray();
+			parameters = IRCCommands.ParseParameters(text);
 			RawText = text;
 			Sender = sender;
-			SenderGroup = senderGroup;
-			SendTo = sendTo;
+			Target = target;
 		}
 
 		public string Eol(int index)
 		{
-			return String.Join(" ", parameters, index, parameters.Length - index);
+			return String.Join(" ", parameters, index + 1, parameters.Count - index - 1);
 		}
-		public string[] ParameterRange(int index, int count)
+		public List<string> ParameterRange(int index, int count)
 		{
-			return parameters.ToList().GetRange(index, count).ToArray();
+			return parameters.GetRange(index + 1, count);
 		}
 	}
 }

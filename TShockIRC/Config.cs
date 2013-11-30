@@ -10,8 +10,8 @@ namespace TShockIRC
 		public string AdminChannelKey = "";
 		public string Channel = "#terraria";
 		public string ChannelKey = "";
+		public string[] ConnectCommands = new string[] { "PRIVMSG NickServ :IDENTIFY password" };
 		public string Nick = "TShock";
-		public string NickServPassword = "";
 		public short Port = 6667;
 		public string RealName = "TShock";
 		public string Server = "localhost";
@@ -30,8 +30,9 @@ namespace TShockIRC
 		public string ServerCommandMessageFormat = "\u000302{0}<{1}>\u000f executed /{2}";
 		public string ServerChatMessageFormat = "\u000302{0}<{1}>\u000f {2}";
 		public string ServerJoinMessageFormat = "\u000303{0} has joined.";
-		public string ServerJoinIPMessageFormat = "\u000303{0} has joined. IP: {1}";
+		public string ServerJoinAdminMessageFormat = "\u000303{0} has joined. IP: {1}";
 		public string ServerLeaveMessageFormat = "\u000305{0} has left.";
+		public string ServerLeaveAdminMessageFormat = "\u000305{0} has joined. IP: {1}";
 
 		public void Write(string path)
 		{

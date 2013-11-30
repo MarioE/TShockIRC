@@ -3,47 +3,51 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using TShockAPI;
+using IrcDotNet;
 
 namespace TShockIRC
 {
-	public class TSIRCPlayer : TSPlayer
+	public class TSIrcPlayer : TSPlayer
 	{
-		public List<string> messages = new List<string>();
+		const int MAX_CHARS_PER_LINE = 400;
 
-		public TSIRCPlayer(string name, Group group)
+		IIrcMessageTarget Target;
+
+		public TSIrcPlayer(string name, Group group, IIrcMessageTarget target)
 			: base(name)
 		{
 			Group = group;
+			Target = target;
 			UserAccountName = name;
 		}
-		
+
 		public override void SendMessage(string msg)
 		{
-			messages.Add(msg);
+			TShockIRC.SendMessage(Target, msg);
 		}
 		public override void SendMessage(string msg, Color color)
 		{
-			messages.Add(msg);
+			TShockIRC.SendMessage(Target, msg);
 		}
 		public override void SendMessage(string msg, byte red, byte green, byte blue)
 		{
-			messages.Add(msg);
+			TShockIRC.SendMessage(Target, msg);
 		}
 		public override void SendErrorMessage(string msg)
 		{
-			messages.Add("\u000305" + msg);
+			TShockIRC.SendMessage(Target, "\u000305" + msg);
 		}
 		public override void SendInfoMessage(string msg)
 		{
-			messages.Add("\u000302" + msg);
+			TShockIRC.SendMessage(Target, "\u000302" + msg);
 		}
 		public override void SendSuccessMessage(string msg)
 		{
-			messages.Add("\u000303" + msg);
+			TShockIRC.SendMessage(Target, "\u000303" + msg);
 		}
 		public override void SendWarningMessage(string msg)
 		{
-			messages.Add("\u000305" + msg);
+			TShockIRC.SendMessage(Target, "\u000305" + msg);
 		}
 	}
 }
