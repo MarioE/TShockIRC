@@ -6,9 +6,10 @@ using System.Text;
 using IrcDotNet;
 using IrcDotNet.Ctcp;
 using Newtonsoft.Json;
+using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
-using Terraria;
+using TShockAPI.Hooks;
 
 namespace TShockIRC
 {
@@ -56,6 +57,7 @@ namespace TShockIRC
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreetPlayer);
 				ServerApi.Hooks.ServerChat.Deregister(this, OnChat);
 				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
+				PlayerHooks.PlayerPostLogin -= OnPostLogin;
 
 				IrcClient.Dispose();
 			}
@@ -66,6 +68,7 @@ namespace TShockIRC
 			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreetPlayer);
 			ServerApi.Hooks.ServerChat.Register(this, OnChat);
 			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
+			PlayerHooks.PlayerPostLogin += OnPostLogin;
 		}
 		#endregion
 
@@ -156,6 +159,14 @@ namespace TShockIRC
 					SendMessage(Config.AdminChannel, String.Format(
 						Config.ServerLeaveAdminMessageFormat, tsplr.Name, tsplr.IP));
 				}
+			}
+		}
+		void OnPostLogin(PlayerPostLoginEventArgs e)
+		{
+			if (!String.IsNullOrEmpty(Config.ServerLoginAdminMessageFormat))
+			{
+				SendMessage(Config.AdminChannel, String.Format(
+					Config.ServerLoginAdminMessageFormat, e.Player.UserAccountName, e.Player.Name, e.Player.IP));
 			}
 		}
 

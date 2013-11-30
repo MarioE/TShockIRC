@@ -21,6 +21,7 @@ namespace TShockIRC
 			UserAccountName = name;
 		}
 
+		[Obsolete]
 		public override void SendMessage(string msg)
 		{
 			TShockIRC.SendMessage(Target, msg);

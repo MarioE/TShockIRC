@@ -33,6 +33,7 @@ namespace TShockIRC
 		public string ServerJoinAdminMessageFormat = "\u000303{0} has joined. IP: {1}";
 		public string ServerLeaveMessageFormat = "\u000305{0} has left.";
 		public string ServerLeaveAdminMessageFormat = "\u000305{0} has left. IP: {1}";
+		public string ServerLoginAdminMessageFormat = "\u000305{0} has logged in as {1}. IP: {2}";
 
 		public void Write(string path)
 		{
@@ -42,9 +43,7 @@ namespace TShockIRC
 		public static Config Read(string path)
 		{
 			if (!File.Exists(path))
-			{
 				return new Config();
-			}
 			return JsonConvert.DeserializeObject<Config>(File.ReadAllText(path));
 		}
 	}
