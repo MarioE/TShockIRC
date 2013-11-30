@@ -226,8 +226,8 @@ namespace TShockIRC
 		{
 			if (String.Equals(e.ChannelUser.Channel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
-				IrcUsers.Remove(e.ChannelUser.User);
-				IrcUsers.Add(e.ChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));
+				if (!IrcUsers.ContainsKey(e.ChannelUser.User))
+					IrcUsers.Add(e.ChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));
 				e.ChannelUser.User.Quit += OnUserQuit;
 
 				if (!String.IsNullOrEmpty(Config.IRCJoinMessageFormat))
@@ -267,11 +267,13 @@ namespace TShockIRC
 				return;
 
 			var ircChannel = ((IrcChannel)e.Targets[0]);
+			var ircUser = (IrcUser)e.Source;
+
 			if (e.Text.StartsWith(Config.BotPrefix))
-				IRCCommands.Execute(e.Text.Substring(Config.BotPrefix.Length), (IrcUser)e.Source, (IIrcMessageTarget)sender);
+				IRCCommands.Execute(e.Text.Substring(Config.BotPrefix.Length), ircUser, (IIrcMessageTarget)sender);
 			else if (String.Equals(ircChannel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
-				IrcChannelUser ircChannelUser = ircChannel.GetChannelUser((IrcUser)e.Source);
+				IrcChannelUser ircChannelUser = ircChannel.GetChannelUser(ircUser);
 				if (!String.IsNullOrEmpty(Config.IRCChatModesRequired) && ircChannelUser != null &&
 					!ircChannelUser.Modes.Intersect(Config.IRCChatModesRequired).Any())
 				{
@@ -296,7 +298,7 @@ namespace TShockIRC
 				{
 					if (!String.IsNullOrEmpty(Config.IRCChatMessageFormat))
 					{
-						Group group = IrcUsers[(IrcUser)e.Source];
+						Group group = IrcUsers[ircUser];
 						TShock.Utils.Broadcast(
 							String.Format(Config.IRCChatMessageFormat, group.Prefix, e.Source.Name, text), group.R, group.G, group.B);
 					}
@@ -305,9 +307,10 @@ namespace TShockIRC
 		}
 		void OnChannelUsersList(object sender, EventArgs e)
 		{
-			if (String.Equals(((IrcChannel)sender).Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
+			var ircChannel = (IrcChannel)sender;
+			if (String.Equals(ircChannel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
-				foreach (IrcChannelUser ircChannelUser in ((IrcChannel)sender).Users)
+				foreach (IrcChannelUser ircChannelUser in ircChannel.Users)
 				{
 					if (!IrcUsers.ContainsKey(ircChannelUser.User))
 						IrcUsers.Add(ircChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));

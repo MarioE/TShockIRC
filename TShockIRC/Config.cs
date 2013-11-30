@@ -18,7 +18,7 @@ namespace TShockIRC
 		public bool SSL = false;
 		public string UserName = "TShock";
 
-		public string BotPrefix = ".ts ";
+		public string BotPrefix = ".";
 		public string IRCActionMessageFormat = "(IRC) * {0} {1}";
 		public string IRCChatMessageFormat = "(IRC) {0}<{1}> {2}";
 		public string IRCChatModesRequired = "";

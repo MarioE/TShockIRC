@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using IrcDotNet;
+using Terraria;
 using TShockAPI;
 using TShockAPI.DB;
 
@@ -17,14 +18,14 @@ namespace TShockIRC
 			var args = new IRCCommandEventArgs(str, sender, target);
 
 			string commandName = args[-1].ToLowerInvariant();
-			IRCCommand command = Commands.FirstOrDefault(c => c.Names.Contains(commandName));
-			if (command != null)
+			var ircCommand = Commands.FirstOrDefault(c => c.Names.Contains(commandName));
+			var senderGroup = TShockIRC.IrcUsers[sender];
+			if (ircCommand != null)
 			{
-				Group senderGroup = TShockIRC.IrcUsers[sender];
-				if (String.IsNullOrEmpty(command.Permission) || senderGroup.HasPermission(command.Permission))
+				if (String.IsNullOrEmpty(ircCommand.Permission) || senderGroup.HasPermission(ircCommand.Permission))
 				{
 					Log.Info("{0} executed: /{1}.", sender.NickName, str);
-					command.Execute(args);
+					ircCommand.Execute(args);
 				}
 				else
 				{
@@ -32,12 +33,38 @@ namespace TShockIRC
 					TShockIRC.SendMessage(target, "\u00035You do not have access to this command.");
 				}
 			}
+			else if (senderGroup.HasPermission("tshockirc.command"))
+			{
+				var tsIrcPlayer = new TSIrcPlayer(sender.NickName, senderGroup, target);
+				var commands = TShockAPI.Commands.ChatCommands.Where(c => c.HasAlias(commandName));
+
+				if (commands.Count() != 0)
+				{
+					Main.rand = new Random();
+					WorldGen.genRand = new Random();
+					foreach (Command command in commands)
+					{
+						if (!command.CanRun(tsIrcPlayer))
+							TShockIRC.SendMessage(target, "\u00035You do not have access to this command.");
+						else if (!command.AllowServer)
+							TShockIRC.SendMessage(target, "\u00035You must use this command in-game.");
+						else
+						{
+							var parms = args.ParameterRange(0, args.Length);
+							if (TShockAPI.Hooks.PlayerHooks.OnPlayerCommand(tsIrcPlayer, command.Name, str, parms))
+								return;
+							command.Run(str, tsIrcPlayer, parms);
+						}
+					}
+				}
+				else
+					TShockIRC.SendMessage(target, "\u00035Invalid command.");
+			}
 			else
-				TShockIRC.SendMessage(target, "\u00035Invalid command.");
+				TShockIRC.SendMessage(target, "\u00035You do not have access to this command.");
 		}
 		public static void Init()
 		{
-			Commands.Add(new IRCCommand("", Command, "c", "command", "exec", "execute"));
 			Commands.Add(new IRCCommand("", Login, "login"));
 			Commands.Add(new IRCCommand("", Logout, "logout"));
 			Commands.Add(new IRCCommand("", Players, "online", "players", "who"));
@@ -83,39 +110,6 @@ namespace TShockIRC
 			return parameters;
 		}
 
-		static void Command(object sender, IRCCommandEventArgs e)
-		{
-			if (e.Length == 0)
-			{
-				TShockIRC.SendMessage(e.Target, "\u00035Invalid syntax! Proper syntax: " + TShockIRC.Config.BotPrefix + e[-1] + " <command> [arguments...]");
-				return;
-			}
-
-			Group group = TShockIRC.IrcUsers[e.Sender];
-
-			var tsIrcPlayer = new TSIrcPlayer(e.Sender.NickName, group, e.Target);
-			var commands = TShockAPI.Commands.ChatCommands.Where(c => c.HasAlias(e[0]));
-
-			if (commands.Count() != 0)
-			{
-				foreach (Command command in commands)
-				{
-					if (!command.CanRun(tsIrcPlayer))
-						TShockIRC.SendMessage(e.Target, "\u00035You do not have access to that command.");
-					else if (!command.AllowServer)
-						TShockIRC.SendMessage(e.Target, "\u00035You must use this command in-game.");
-					else
-					{
-						var args = e.ParameterRange(1, e.Length - 1);
-						if (TShockAPI.Hooks.PlayerHooks.OnPlayerCommand(tsIrcPlayer, command.Name, e.RawText, args))
-							return;
-						command.Run(e.RawText, tsIrcPlayer, args);
-					}
-				}
-			}
-			else
-				TShockIRC.SendMessage(e.Target, "\u00035Invalid command.");
-		}
 		static void Login(object sender, IRCCommandEventArgs e)
 		{
 			if (e.Length != 2)
