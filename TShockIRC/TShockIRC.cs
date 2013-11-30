@@ -231,10 +231,8 @@ namespace TShockIRC
 
 				if (!String.IsNullOrEmpty(Config.IRCJoinMessageFormat))
 				{
-					TSPlayer.Server.SendSuccessMessage(
-						String.Format(Config.IRCJoinMessageFormat, e.ChannelUser.User.NickName));
-					TSPlayer.All.SendSuccessMessage(
-						String.Format(Config.IRCJoinMessageFormat, e.ChannelUser.User.NickName));
+					TShock.Utils.Broadcast(
+						String.Format(Config.IRCJoinMessageFormat, e.ChannelUser.User.NickName), Color.Green);
 				}
 			}
 		}
@@ -245,10 +243,8 @@ namespace TShockIRC
 				IrcUsers.Remove(e.ChannelUser.User);
 				if (!String.IsNullOrEmpty(Config.IRCKickMessageFormat))
 				{
-					TSPlayer.Server.SendErrorMessage(
-						String.Format(Config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment));
-					TSPlayer.All.SendErrorMessage(
-						String.Format(Config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment));
+					TShock.Utils.Broadcast(
+						String.Format(Config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment), Color.Red);
 				}
 			}
 		}
@@ -259,10 +255,8 @@ namespace TShockIRC
 				IrcUsers.Remove(e.ChannelUser.User);
 				if (!String.IsNullOrEmpty(Config.IRCLeaveMessageFormat))
 				{
-					TSPlayer.Server.SendErrorMessage(
-						String.Format(Config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment));
-					TSPlayer.All.SendErrorMessage(
-						String.Format(Config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment));
+					TShock.Utils.Broadcast(
+						String.Format(Config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment), Color.Red);
 				}
 			}
 		}
@@ -293,9 +287,7 @@ namespace TShockIRC
 				{
 					if (!String.IsNullOrEmpty(Config.IRCActionMessageFormat))
 					{
-						TSPlayer.Server.SendMessage(
-							String.Format(Config.IRCActionMessageFormat, e.Source.Name, text.Substring(8, text.Length - 9)), 205, 133, 63);
-						TSPlayer.All.SendMessage(
+						TShock.Utils.Broadcast(
 							String.Format(Config.IRCActionMessageFormat, e.Source.Name, text.Substring(8, text.Length - 9)), 205, 133, 63);
 					}
 				}
@@ -304,9 +296,7 @@ namespace TShockIRC
 					if (!String.IsNullOrEmpty(Config.IRCChatMessageFormat))
 					{
 						Group group = IrcUsers[(IrcUser)e.Source];
-						TSPlayer.Server.SendMessage(
-							String.Format(Config.IRCChatMessageFormat, group.Prefix, e.Source.Name, text), group.R, group.G, group.B);
-						TSPlayer.All.SendMessage(
+						TShock.Utils.Broadcast(
 							String.Format(Config.IRCChatMessageFormat, group.Prefix, e.Source.Name, text), group.R, group.G, group.B);
 					}
 				}
@@ -314,9 +304,9 @@ namespace TShockIRC
 		}
 		void OnChannelUsersList(object sender, EventArgs e)
 		{
-			IrcUsers.Clear();
 			if (String.Equals(((IrcChannel)sender).Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
+				IrcUsers.Clear();
 				foreach (IrcChannelUser ircChannelUser in ((IrcChannel)sender).Users)
 				{
 					IrcUsers.Add(ircChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));
@@ -333,10 +323,8 @@ namespace TShockIRC
 			
 			if (!String.IsNullOrEmpty(Config.IRCQuitMessageFormat))
 			{
-				TSPlayer.Server.SendErrorMessage(
-					String.Format(Config.IRCQuitMessageFormat, ircUser.NickName, e.Comment));
-				TSPlayer.All.SendErrorMessage(
-					String.Format(Config.IRCQuitMessageFormat, ircUser.NickName, e.Comment));
+				TShock.Utils.Broadcast(
+					String.Format(Config.IRCQuitMessageFormat, ircUser.NickName, e.Comment), Color.Red);
 			}
 		}
 

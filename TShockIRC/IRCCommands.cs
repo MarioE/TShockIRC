@@ -22,9 +22,15 @@ namespace TShockIRC
 			{
 				Group senderGroup = TShockIRC.IrcUsers[sender];
 				if (String.IsNullOrEmpty(command.Permission) || senderGroup.HasPermission(command.Permission))
+				{
+					Log.Info("{0} executed: /{1}.", sender.NickName, str);
 					command.Execute(args);
+				}
 				else
+				{
+					Log.Warn("{0} tried to execute /{1}.", sender.NickName, str);
 					TShockIRC.SendMessage(target, "\u00035You do not have access to this command.");
+				}
 			}
 			else
 				TShockIRC.SendMessage(target, "\u00035Invalid command.");
