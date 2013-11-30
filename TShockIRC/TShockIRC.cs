@@ -105,7 +105,7 @@ namespace TShockIRC
 						!String.IsNullOrEmpty(Config.ServerChatMessageFormat))
 					{
 						SendMessage(Config.Channel, String.Format(
-							Config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text));
+							Config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text, tsPlr.Group.Suffix));
 					}
 				}
 			}
@@ -180,7 +180,6 @@ namespace TShockIRC
 		void IRCRestart(CommandArgs e)
 		{
 			IrcClient.Quit("Restarting...");
-			IrcUsers.Clear();
 			IrcClient = new IrcClient();
 			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
 				new IrcUserRegistrationInfo()
@@ -226,6 +225,7 @@ namespace TShockIRC
 		{
 			if (String.Equals(e.ChannelUser.Channel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
+				IrcUsers.Remove(e.ChannelUser.User);
 				IrcUsers.Add(e.ChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));
 				e.ChannelUser.User.Quit += OnUserQuit;
 
@@ -314,6 +314,7 @@ namespace TShockIRC
 		}
 		void OnChannelUsersList(object sender, EventArgs e)
 		{
+			IrcUsers.Clear();
 			if (String.Equals(((IrcChannel)sender).Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
 				foreach (IrcChannelUser ircChannelUser in ((IrcChannel)sender).Users)
