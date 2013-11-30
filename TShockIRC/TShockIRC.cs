@@ -180,6 +180,7 @@ namespace TShockIRC
 		void IRCRestart(CommandArgs e)
 		{
 			IrcClient.Quit("Restarting...");
+			IrcUsers.Clear();
 			IrcClient = new IrcClient();
 			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
 				new IrcUserRegistrationInfo()
@@ -306,10 +307,10 @@ namespace TShockIRC
 		{
 			if (String.Equals(((IrcChannel)sender).Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
-				IrcUsers.Clear();
 				foreach (IrcChannelUser ircChannelUser in ((IrcChannel)sender).Users)
 				{
-					IrcUsers.Add(ircChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));
+					if (!IrcUsers.ContainsKey(ircChannelUser.User))
+						IrcUsers.Add(ircChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));
 					ircChannelUser.User.Quit += OnUserQuit;
 				}
 			}
