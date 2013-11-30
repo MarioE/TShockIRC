@@ -233,7 +233,7 @@ namespace TShockIRC
 				if (!String.IsNullOrEmpty(Config.IRCJoinMessageFormat))
 				{
 					TShock.Utils.Broadcast(
-						String.Format(Config.IRCJoinMessageFormat, e.ChannelUser.User.NickName), Color.Green);
+						String.Format(Config.IRCJoinMessageFormat, e.ChannelUser.User.NickName), Color.Yellow);
 				}
 			}
 		}
@@ -245,7 +245,7 @@ namespace TShockIRC
 				if (!String.IsNullOrEmpty(Config.IRCKickMessageFormat))
 				{
 					TShock.Utils.Broadcast(
-						String.Format(Config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment), Color.Red);
+						String.Format(Config.IRCKickMessageFormat, e.ChannelUser.User.NickName, e.Comment), Color.Green);
 				}
 			}
 		}
@@ -257,7 +257,7 @@ namespace TShockIRC
 				if (!String.IsNullOrEmpty(Config.IRCLeaveMessageFormat))
 				{
 					TShock.Utils.Broadcast(
-						String.Format(Config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment), Color.Red);
+						String.Format(Config.IRCLeaveMessageFormat, e.ChannelUser.User.NickName, e.Comment), Color.Yellow);
 				}
 			}
 		}
@@ -328,7 +328,7 @@ namespace TShockIRC
 			if (!String.IsNullOrEmpty(Config.IRCQuitMessageFormat))
 			{
 				TShock.Utils.Broadcast(
-					String.Format(Config.IRCQuitMessageFormat, ircUser.NickName, e.Comment), Color.Red);
+					String.Format(Config.IRCQuitMessageFormat, ircUser.NickName, e.Comment), Color.Yellow);
 			}
 		}
 
