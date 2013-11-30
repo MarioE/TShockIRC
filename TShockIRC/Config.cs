@@ -32,7 +32,7 @@ namespace TShockIRC
 		public string ServerJoinMessageFormat = "\u000303{0} has joined.";
 		public string ServerJoinAdminMessageFormat = "\u000303{0} has joined. IP: {1}";
 		public string ServerLeaveMessageFormat = "\u000305{0} has left.";
-		public string ServerLeaveAdminMessageFormat = "\u000305{0} has joined. IP: {1}";
+		public string ServerLeaveAdminMessageFormat = "\u000305{0} has left. IP: {1}";
 
 		public void Write(string path)
 		{
