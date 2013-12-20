@@ -133,6 +133,7 @@ namespace TShockIRC
 			string configPath = Path.Combine(TShock.SavePath, "tshockircconfig.json");
 			(Config = Config.Read(configPath)).Write(configPath);
 
+			IrcClient.Error += OnIRCError;
 			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
 				new IrcUserRegistrationInfo()
 				{
@@ -182,6 +183,7 @@ namespace TShockIRC
 			IrcClient.Quit("Restarting...");
 			IrcUsers.Clear();
 			IrcClient = new IrcClient();
+			IrcClient.Error += OnIRCError;
 			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
 				new IrcUserRegistrationInfo()
 				{
@@ -198,6 +200,10 @@ namespace TShockIRC
 		#endregion
 
 		#region IRC client events
+		void OnIRCError(object sender, IrcErrorEventArgs e)
+		{
+			Log.ConsoleError("[TShockIRC] IRC error occurred: {0}", e.Error);
+		}
 		void OnIRCRegistered(object sender, EventArgs e)
 		{
 			foreach (string command in Config.ConnectCommands)
