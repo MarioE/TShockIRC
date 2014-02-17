@@ -13,7 +13,7 @@ using TShockAPI.Hooks;
 
 namespace TShockIRC
 {
-	[ApiVersion(1, 14)]
+	[ApiVersion(1, 15)]
 	public class TShockIRC : TerrariaPlugin
 	{
 		public const int MAX_CHARS_PER_LINE = 400;
