@@ -57,6 +57,7 @@ namespace TShockIRC
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreetPlayer);
 				ServerApi.Hooks.ServerChat.Deregister(this, OnChat);
 				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
+				ServerApi.Hooks.NetGetData.Deregister(this, OnGetData);
 				PlayerHooks.PlayerPostLogin -= OnPostLogin;
 
 				IrcClient.Dispose();
@@ -68,6 +69,7 @@ namespace TShockIRC
 			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreetPlayer);
 			ServerApi.Hooks.ServerChat.Register(this, OnChat);
 			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
+			ServerApi.Hooks.NetGetData.Register(this, OnGetData);
 			PlayerHooks.PlayerPostLogin += OnPostLogin;
 		}
 		#endregion
@@ -108,6 +110,30 @@ namespace TShockIRC
 							Config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text, tsPlr.Group.Suffix));
 					}
 				}
+			}
+		}
+		void OnGetData(GetDataEventArgs args)
+		{
+			if ((!args.Handled) && (args.MsgID == PacketTypes.PlayerKillMe))
+			{
+				using (var reader = new BinaryReader(new MemoryStream(args.Msg.readBuffer, args.Index, args.Length)))
+				{
+					var id = reader.ReadByte();
+					var dir = reader.ReadByte();
+					var dmg = reader.ReadInt16();
+					var pvp = reader.ReadByte();
+					int textlength = (int)(reader.BaseStream.Length - reader.BaseStream.Position - 1);
+					if (textlength > 0)
+					{
+						string deathtext = Encoding.UTF8.GetString(reader.ReadBytes(textlength));
+						if (!String.IsNullOrEmpty(Config.ServerDeathMessageFormat))
+						{
+							SendMessage(Config.Channel, String.Format(
+								Config.ServerDeathMessageFormat, TShock.Players[id].Name, deathtext));
+						}
+					}
+				}
+
 			}
 		}
 		void OnGreetPlayer(GreetPlayerEventArgs e)

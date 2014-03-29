@@ -29,6 +29,7 @@ namespace TShockIRC
 		public string ServerActionMessageFormat = "\u000302\u0002* {0}\u000f {1}";
 		public string ServerCommandMessageFormat = "\u000302{0}<{1}>\u000f executed /{2}";
 		public string ServerChatMessageFormat = "\u000302{0}<{1}>\u000f {2}{3}";
+		public string ServerDeathMessageFormat = "\u000303{0}{1}";
 		public string ServerJoinMessageFormat = "\u000303{0} has joined.";
 		public string ServerJoinAdminMessageFormat = "\u000303{0} has joined. IP: {1}";
 		public string ServerLeaveMessageFormat = "\u000305{0} has left.";
