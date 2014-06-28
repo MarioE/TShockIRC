@@ -17,7 +17,7 @@ namespace TShockIRC
 	public class TShockIRC : TerrariaPlugin
 	{
 		public const int MAX_CHARS_PER_LINE = 400;
-		
+
 		#region TerrariaPlugin implementation
 		public override string Author
 		{
@@ -38,6 +38,7 @@ namespace TShockIRC
 		#endregion
 
 		public static Config Config = new Config();
+		public static bool Disconnecting = false;
 		public static CtcpClient CtcpClient;
 		public static IrcClient IrcClient = new IrcClient();
 		public static Dictionary<IrcUser, Group> IrcUsers = new Dictionary<IrcUser, Group>();
@@ -57,8 +58,10 @@ namespace TShockIRC
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreetPlayer);
 				ServerApi.Hooks.ServerChat.Deregister(this, OnChat);
 				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
+				ServerApi.Hooks.NetGetData.Deregister(this, OnGetData);
 				PlayerHooks.PlayerPostLogin -= OnPostLogin;
 
+				Disconnecting = true;
 				IrcClient.Dispose();
 			}
 		}
@@ -68,6 +71,7 @@ namespace TShockIRC
 			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreetPlayer);
 			ServerApi.Hooks.ServerChat.Register(this, OnChat);
 			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
+			ServerApi.Hooks.NetGetData.Register(this, OnGetData);
 			PlayerHooks.PlayerPostLogin += OnPostLogin;
 		}
 		#endregion
@@ -110,6 +114,30 @@ namespace TShockIRC
 				}
 			}
 		}
+		void OnGetData(GetDataEventArgs args)
+		{
+			if ((!args.Handled) && (args.MsgID == PacketTypes.PlayerKillMe))
+			{
+				using (var reader = new BinaryReader(new MemoryStream(args.Msg.readBuffer, args.Index, args.Length)))
+				{
+					var id = reader.ReadByte();
+					var dir = reader.ReadByte();
+					var dmg = reader.ReadInt16();
+					var pvp = reader.ReadByte();
+					int textlength = (int)(reader.BaseStream.Length - reader.BaseStream.Position - 1);
+					if (textlength > 0)
+					{
+						string deathtext = Encoding.UTF8.GetString(reader.ReadBytes(textlength));
+						if (!String.IsNullOrEmpty(Config.ServerDeathMessageFormat))
+						{
+							SendMessage(Config.Channel, String.Format(
+								Config.ServerDeathMessageFormat, TShock.Players[id].Name, deathtext));
+						}
+					}
+				}
+
+			}
+		}
 		void OnGreetPlayer(GreetPlayerEventArgs e)
 		{
 			TSPlayer tsplr = TShock.Players[e.Who];
@@ -143,6 +171,7 @@ namespace TShockIRC
 					UserModes = new List<char> { 'i', 'w' }
 				});
 			IrcClient.Registered += OnIRCRegistered;
+			IrcClient.Disconnected += OnIRCDisconnected;
 			CtcpClient = new CtcpClient(IrcClient) { ClientVersion = "TShockIRC v" + Version };
 		}
 		void OnLeave(LeaveEventArgs e)
@@ -180,7 +209,34 @@ namespace TShockIRC
 		}
 		void IRCRestart(CommandArgs e)
 		{
+			Disconnecting = true;
 			IrcClient.Quit("Restarting...");
+			IrcUsers.Clear();
+			Disconnecting = false;
+			IrcClient = new IrcClient();
+			IrcClient.Error += OnIRCError;
+			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
+				new IrcUserRegistrationInfo()
+				{
+					NickName = Config.Nick,
+					RealName = Config.RealName,
+					UserName = Config.UserName,
+					UserModes = new List<char> { 'i', 'w' }
+				});
+			IrcClient.Registered += OnIRCRegistered;
+			IrcClient.Disconnected += OnIRCDisconnected;
+			CtcpClient = new CtcpClient(IrcClient) { ClientVersion = "TShockIRC v" + Version };
+
+			e.Player.SendInfoMessage("Restarted the IRC bot.");
+		}
+		#endregion
+
+		#region IRC client events
+		void OnIRCDisconnected(object sender, EventArgs e)
+		{
+			if (Disconnecting) {
+				return;
+			}
 			IrcUsers.Clear();
 			IrcClient = new IrcClient();
 			IrcClient.Error += OnIRCError;
@@ -193,13 +249,9 @@ namespace TShockIRC
 					UserModes = new List<char> { 'i', 'w' }
 				});
 			IrcClient.Registered += OnIRCRegistered;
+			IrcClient.Disconnected += OnIRCDisconnected;
 			CtcpClient = new CtcpClient(IrcClient) { ClientVersion = "TShockIRC v" + Version };
-
-			e.Player.SendInfoMessage("Restarted the IRC bot.");
 		}
-		#endregion
-
-		#region IRC client events
 		void OnIRCError(object sender, IrcErrorEventArgs e)
 		{
 			Log.ConsoleError("[TShockIRC] IRC error occurred: {0}", e.Error);
@@ -330,7 +382,7 @@ namespace TShockIRC
 		{
 			var ircUser = (IrcUser)sender;
 			IrcUsers.Remove(ircUser);
-			
+
 			if (!String.IsNullOrEmpty(Config.IRCQuitMessageFormat))
 			{
 				TShock.Utils.Broadcast(
