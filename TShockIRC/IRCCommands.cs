@@ -51,7 +51,7 @@ namespace TShockIRC
 						else
 						{
 							var parms = args.ParameterRange(0, args.Length);
-							if (TShockAPI.Hooks.PlayerHooks.OnPlayerCommand(tsIrcPlayer, command.Name, str, parms))
+							if (TShockAPI.Hooks.PlayerHooks.OnPlayerCommand(tsIrcPlayer, command.Name, str, parms, ref commands))
 								return;
 							command.Run(str, tsIrcPlayer, parms);
 						}
