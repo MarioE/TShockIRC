@@ -1318,24 +1318,26 @@ namespace IrcDotNet
             if (nickName.Length == 0)
                 throw new ArgumentException(Properties.Resources.MessageValueCannotBeEmptyString, "nickName");
 
-            // Search for user with given nick name in list of known users. If it does not exist, add it.
-            var user = this.users.SingleOrDefault(u => u.NickName == nickName);
-            if (user == null)
-            {
-                user = new IrcUser();
-                user.Client = this;
-                user.NickName = nickName;
-                lock (((ICollection)this.usersReadOnly).SyncRoot)
-                    this.users.Add(user);
+			lock (((ICollection)this.usersReadOnly).SyncRoot)
+			{
+				// Search for user with given nick name in list of known users. If it does not exist, add it.
+				var user = this.users.SingleOrDefault(u => u.NickName == nickName);
+				if (user == null)
+				{
+					user = new IrcUser();
+					user.Client = this;
+					user.NickName = nickName;
+					this.users.Add(user);
 
-                createdNew = true;
-            }
-            else
-            {
-                createdNew = false;
-            }
-            user.IsOnline = isOnline;
-            return user;
+					createdNew = true;
+				}
+				else
+				{
+					createdNew = false;
+				}
+				user.IsOnline = isOnline;
+				return user;
+			}
         }
 
         /// <inheritdoc cref="GetUserFromUserName(string, out bool)"/>
