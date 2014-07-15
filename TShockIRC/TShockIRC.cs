@@ -281,7 +281,7 @@ namespace TShockIRC
 			var ircChannel = (IrcChannel)sender;
 			if (String.Equals(ircChannel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
-				foreach (IrcChannelUser ircChannelUser in ircChannel.Users)
+				foreach (IrcChannelUser ircChannelUser in ircChannel.Users.Where(icu => !Config.IgnoredNicks.Contains(icu.User.NickName)))
 				{
 					if (!IrcUsers.ContainsKey(ircChannelUser.User))
 						IrcUsers.Add(ircChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));
