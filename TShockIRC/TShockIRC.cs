@@ -16,8 +16,6 @@ namespace TShockIRC
 	[ApiVersion(1, 16)]
 	public class TShockIRC : TerrariaPlugin
 	{
-		public const int MAX_CHARS_PER_LINE = 400;
-		
 		#region TerrariaPlugin implementation
 		public override string Author
 		{
@@ -79,11 +77,8 @@ namespace TShockIRC
 			TSPlayer tsPlr = TShock.Players[e.Who];
 			if (e.Text != null && !e.Text.StartsWith(TShock.Config.CommandSpecifier) && tsPlr != null)
 			{
-				if (!e.Handled && !tsPlr.mute && tsPlr.Group.HasPermission(Permissions.canchat) &&
-					!String.IsNullOrEmpty(Config.ServerChatMessageFormat))
-				{
+				if (!tsPlr.mute && tsPlr.Group.HasPermission(Permissions.canchat) && !String.IsNullOrEmpty(Config.ServerChatMessageFormat))
 					SendMessage(Config.Channel, String.Format(Config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text, tsPlr.Group.Suffix));
-				}
 			}
 		}
 		void OnGreetPlayer(GreetPlayerEventArgs e)
@@ -96,14 +91,13 @@ namespace TShockIRC
 		}
 		void OnInitialize(EventArgs e)
 		{
-			IRCCommands.Init();
+			IRCCommands.Initialize();
 			Commands.ChatCommands.Add(new Command("tshockirc.manage", IRCReload, "ircreload"));
 			Commands.ChatCommands.Add(new Command("tshockirc.manage", IRCRestart, "ircrestart"));
 
 			string configPath = Path.Combine(TShock.SavePath, "tshockircconfig.json");
 			(Config = Config.Read(configPath)).Write(configPath);
 
-			IrcClient.Error += OnIRCError;
 			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
 				new IrcUserRegistrationInfo()
 				{
@@ -145,7 +139,7 @@ namespace TShockIRC
 		void OnPostLogin(PlayerPostLoginEventArgs e)
 		{
 			if (!String.IsNullOrEmpty(Config.ServerLoginAdminMessageFormat))
-				SendMessage(Config.AdminChannel, String.Format(Config.ServerLoginAdminMessageFormat, e.Player.UserAccountName, e.Player.Name, e.Player.IP));
+				SendMessage(Config.AdminChannel, String.Format(Config.ServerLoginAdminMessageFormat, e.Player.Name, e.Player.UserAccountName, e.Player.IP));
 		}
 
 		#region Commands
@@ -159,8 +153,8 @@ namespace TShockIRC
 		{
 			IrcClient.Quit("Restarting...");
 			IrcUsers.Clear();
+
 			IrcClient = new IrcClient();
-			IrcClient.Error += OnIRCError;
 			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
 				new IrcUserRegistrationInfo()
 				{
@@ -177,10 +171,6 @@ namespace TShockIRC
 		#endregion
 
 		#region IRC client events
-		void OnIRCError(object sender, IrcErrorEventArgs e)
-		{
-			Log.ConsoleError("[TShockIRC] IRC error occurred: {0}", e.Error);
-		}
 		void OnIRCRegistered(object sender, EventArgs e)
 		{
 			foreach (string command in Config.ConnectCommands)
@@ -205,9 +195,7 @@ namespace TShockIRC
 		{
 			IRCCommands.Execute(e.Text, (IrcUser)e.Source, (IIrcMessageTarget)e.Source);
 		}
-		#endregion
-
-		#region IRC channel events
+		
 		void OnChannelJoined(object sender, IrcChannelUserEventArgs e)
 		{
 			if (Config.IgnoredNicks.Contains(e.ChannelUser.User.NickName))
@@ -301,16 +289,16 @@ namespace TShockIRC
 				}
 			}
 		}
-		#endregion
 
 		void OnUserQuit(object sender, IrcCommentEventArgs e)
 		{
 			var ircUser = (IrcUser)sender;
 			IrcUsers.Remove(ircUser);
-			
+
 			if (!String.IsNullOrEmpty(Config.IRCQuitMessageFormat))
 				TShock.Utils.Broadcast(String.Format(Config.IRCQuitMessageFormat, ircUser.NickName, e.Comment), Color.Yellow);
 		}
+		#endregion
 
 		public static void SendMessage(IIrcMessageTarget target, string msg)
 		{
@@ -321,7 +309,7 @@ namespace TShockIRC
 			var sb = new StringBuilder();
 			foreach (string word in msg.Split(' '))
 			{
-				if (sb.Length + word.Length + 1 > MAX_CHARS_PER_LINE)
+				if (sb.Length + word.Length + 1 > 400)
 				{
 					IrcClient.LocalUser.SendMessage(target, sb.ToString());
 					sb.Clear();
@@ -340,7 +328,7 @@ namespace TShockIRC
 			var sb = new StringBuilder();
 			foreach (string word in msg.Split(' '))
 			{
-				if (sb.Length + word.Length + 1 > MAX_CHARS_PER_LINE)
+				if (sb.Length + word.Length + 1 > 400)
 				{
 					IrcClient.LocalUser.SendMessage(target, sb.ToString());
 					sb.Clear();

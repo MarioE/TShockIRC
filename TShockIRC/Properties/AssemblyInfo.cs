@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MarioE")]
 [assembly: AssemblyProduct("TShockIRC")]
-[assembly: AssemblyCopyright("Copyright © MarioE 2013")]
+[assembly: AssemblyCopyright("Copyright © MarioE 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

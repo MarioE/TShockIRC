@@ -63,7 +63,7 @@ namespace TShockIRC
 			else
 				TShockIRC.SendMessage(target, "\u00035You do not have access to this command.");
 		}
-		public static void Init()
+		public static void Initialize()
 		{
 			Commands.Add(new IRCCommand("", Login, "login"));
 			Commands.Add(new IRCCommand("", Logout, "logout"));
