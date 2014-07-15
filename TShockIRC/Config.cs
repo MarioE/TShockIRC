@@ -19,6 +19,7 @@ namespace TShockIRC
 		public string UserName = "TShock";
 
 		public string BotPrefix = ".";
+		public string[] IgnoredNicks = new string[] { };
 		public string IRCActionMessageFormat = "(IRC) * {0} {1}";
 		public string IRCChatMessageFormat = "(IRC) {0}<{1}> {2}";
 		public string IRCChatModesRequired = "";

@@ -210,6 +210,9 @@ namespace TShockIRC
 		#region IRC channel events
 		void OnChannelJoined(object sender, IrcChannelUserEventArgs e)
 		{
+			if (Config.IgnoredNicks.Contains(e.ChannelUser.User.NickName))
+				return;
+
 			if (String.Equals(e.ChannelUser.Channel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
 				if (!IrcUsers.ContainsKey(e.ChannelUser.User))
@@ -222,6 +225,9 @@ namespace TShockIRC
 		}
 		void OnChannelKicked(object sender, IrcChannelUserEventArgs e)
 		{
+			if (Config.IgnoredNicks.Contains(e.ChannelUser.User.NickName))
+				return;
+
 			if (String.Equals(e.ChannelUser.Channel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
 				IrcUsers.Remove(e.ChannelUser.User);
@@ -231,6 +237,9 @@ namespace TShockIRC
 		}
 		void OnChannelLeft(object sender, IrcChannelUserEventArgs e)
 		{
+			if (Config.IgnoredNicks.Contains(e.ChannelUser.User.NickName))
+				return;
+
 			if (String.Equals(e.ChannelUser.Channel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
 				IrcUsers.Remove(e.ChannelUser.User);
@@ -240,7 +249,7 @@ namespace TShockIRC
 		}
 		void OnChannelMessage(object sender, IrcMessageEventArgs e)
 		{
-			if (e.Targets.Count == 0)
+			if (e.Targets.Count == 0 || Config.IgnoredNicks.Contains(((IrcUser)e.Source).NickName))
 				return;
 
 			var ircChannel = ((IrcChannel)e.Targets[0]);
