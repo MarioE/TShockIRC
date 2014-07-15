@@ -135,7 +135,7 @@ namespace TShockIRC
 					if (!e.Player.mute && e.Player.Group.HasPermission(Permissions.cantalkinthird) && !String.IsNullOrEmpty(Config.ServerActionMessageFormat))
 						SendMessage(Config.Channel, String.Format(Config.ServerActionMessageFormat, e.Player.Name, e.CommandText.Substring(3)));
 				}
-				else if (e.CommandList.First().DoLog)
+				else if (e.CommandList.Count() == 0 || e.CommandList.First().DoLog)
 				{
 					if (!String.IsNullOrEmpty(Config.ServerCommandMessageFormat))
 						SendMessage(Config.AdminChannel, String.Format(Config.ServerCommandMessageFormat, e.Player.Group.Prefix, e.Player.Name, e.CommandText));
