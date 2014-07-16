@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using IrcDotNet;
 using IrcDotNet.Ctcp;
 using Newtonsoft.Json;
@@ -10,6 +11,8 @@ using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.Hooks;
+
+using Group = TShockAPI.Group;
 
 namespace TShockIRC
 {
@@ -75,10 +78,11 @@ namespace TShockIRC
 		void OnChat(ServerChatEventArgs e)
 		{
 			TSPlayer tsPlr = TShock.Players[e.Who];
-			if (e.Text != null && !e.Text.StartsWith(TShock.Config.CommandSpecifier) && tsPlr != null)
+			if (e.Text != null && !e.Text.StartsWith(TShock.Config.CommandSpecifier) && tsPlr != null &&
+				!tsPlr.mute && tsPlr.Group.HasPermission(Permissions.canchat) && !String.IsNullOrEmpty(Config.ServerChatMessageFormat) &&
+				!Config.IgnoredServerChatRegexes.Any(s => Regex.IsMatch(e.Text, s)))
 			{
-				if (!tsPlr.mute && tsPlr.Group.HasPermission(Permissions.canchat) && !String.IsNullOrEmpty(Config.ServerChatMessageFormat))
-					SendMessage(Config.Channel, String.Format(Config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text, tsPlr.Group.Suffix));
+				SendMessage(Config.Channel, String.Format(Config.ServerChatMessageFormat, tsPlr.Group.Prefix, tsPlr.Name, e.Text, tsPlr.Group.Suffix));
 			}
 		}
 		void OnGreetPlayer(GreetPlayerEventArgs e)
@@ -198,7 +202,7 @@ namespace TShockIRC
 		
 		void OnChannelJoined(object sender, IrcChannelUserEventArgs e)
 		{
-			if (Config.IgnoredNicks.Contains(e.ChannelUser.User.NickName))
+			if (Config.IgnoredIRCNicks.Contains(e.ChannelUser.User.NickName))
 				return;
 
 			if (String.Equals(e.ChannelUser.Channel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
@@ -213,7 +217,7 @@ namespace TShockIRC
 		}
 		void OnChannelKicked(object sender, IrcChannelUserEventArgs e)
 		{
-			if (Config.IgnoredNicks.Contains(e.ChannelUser.User.NickName))
+			if (Config.IgnoredIRCNicks.Contains(e.ChannelUser.User.NickName))
 				return;
 
 			if (String.Equals(e.ChannelUser.Channel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
@@ -225,7 +229,7 @@ namespace TShockIRC
 		}
 		void OnChannelLeft(object sender, IrcChannelUserEventArgs e)
 		{
-			if (Config.IgnoredNicks.Contains(e.ChannelUser.User.NickName))
+			if (Config.IgnoredIRCNicks.Contains(e.ChannelUser.User.NickName))
 				return;
 
 			if (String.Equals(e.ChannelUser.Channel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
@@ -237,7 +241,8 @@ namespace TShockIRC
 		}
 		void OnChannelMessage(object sender, IrcMessageEventArgs e)
 		{
-			if (e.Targets.Count == 0 || Config.IgnoredNicks.Contains(((IrcUser)e.Source).NickName))
+			if (Config.IgnoredIRCNicks.Contains(((IrcUser)e.Source).NickName) ||
+				Config.IgnoredIRCChatRegexes.Any(s => Regex.IsMatch(e.Text, s)))
 				return;
 
 			var ircChannel = ((IrcChannel)e.Targets[0]);
@@ -281,7 +286,7 @@ namespace TShockIRC
 			var ircChannel = (IrcChannel)sender;
 			if (String.Equals(ircChannel.Name, Config.Channel, StringComparison.OrdinalIgnoreCase))
 			{
-				foreach (IrcChannelUser ircChannelUser in ircChannel.Users.Where(icu => !Config.IgnoredNicks.Contains(icu.User.NickName)))
+				foreach (IrcChannelUser ircChannelUser in ircChannel.Users.Where(icu => !Config.IgnoredIRCNicks.Contains(icu.User.NickName)))
 				{
 					if (!IrcUsers.ContainsKey(ircChannelUser.User))
 						IrcUsers.Add(ircChannelUser.User, TShock.Groups.GetGroupByName(TShock.Config.DefaultGuestGroupName));
