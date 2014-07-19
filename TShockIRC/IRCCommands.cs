@@ -45,7 +45,10 @@ namespace TShockIRC
 					foreach (Command command in commands)
 					{
 						if (!command.CanRun(tsIrcPlayer))
+						{
+							Log.Warn("{0} tried to execute /{1}.", sender.NickName, str);
 							TShockIRC.SendMessage(target, "\u00035You do not have access to this command.");
+						}
 						else if (!command.AllowServer)
 							TShockIRC.SendMessage(target, "\u00035You must use this command in-game.");
 						else
@@ -53,6 +56,7 @@ namespace TShockIRC
 							var parms = args.ParameterRange(0, args.Length);
 							if (TShockAPI.Hooks.PlayerHooks.OnPlayerCommand(tsIrcPlayer, command.Name, str, parms, ref commands))
 								return;
+							Log.Info("{0} executed: /{1}.", sender.NickName, str);
 							command.Run(str, tsIrcPlayer, parms);
 						}
 					}
@@ -61,7 +65,10 @@ namespace TShockIRC
 					TShockIRC.SendMessage(target, "\u00035Invalid command.");
 			}
 			else
+			{
+				Log.Warn("{0} tried to execute /{1}.", sender.NickName, str);
 				TShockIRC.SendMessage(target, "\u00035You do not have access to this command.");
+			}
 		}
 		public static void Initialize()
 		{
