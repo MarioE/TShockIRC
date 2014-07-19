@@ -10,6 +10,7 @@ namespace TShockIRC
 	public class IRCCommand
 	{
 		EventHandler<IRCCommandEventArgs> callback;
+		public bool DoLog { get; set; }
 		public string[] Names { get; private set; }
 		public string Permission { get; private set; }
 
@@ -18,6 +19,7 @@ namespace TShockIRC
 		public IRCCommand(string permission, EventHandler<IRCCommandEventArgs> command, params string[] names)
 		{
 			callback = command;
+			DoLog = true;
 			Names = names.Select(s => s.ToLower()).ToArray();
 			Permission = permission;
 		}

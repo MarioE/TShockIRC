@@ -24,7 +24,8 @@ namespace TShockIRC
 			{
 				if (String.IsNullOrEmpty(ircCommand.Permission) || senderGroup.HasPermission(ircCommand.Permission))
 				{
-					Log.Info("{0} executed: /{1}.", sender.NickName, str);
+					if (ircCommand.DoLog)
+						Log.Info("{0} executed: /{1}.", sender.NickName, str);
 					ircCommand.Execute(args);
 				}
 				else
@@ -56,7 +57,8 @@ namespace TShockIRC
 							var parms = args.ParameterRange(0, args.Length);
 							if (TShockAPI.Hooks.PlayerHooks.OnPlayerCommand(tsIrcPlayer, command.Name, str, parms, ref commands))
 								return;
-							Log.Info("{0} executed: /{1}.", sender.NickName, str);
+							if (command.DoLog)
+								Log.Info("{0} executed: /{1}.", sender.NickName, str);
 							command.Run(str, tsIrcPlayer, parms);
 						}
 					}
@@ -72,7 +74,7 @@ namespace TShockIRC
 		}
 		public static void Initialize()
 		{
-			Commands.Add(new IRCCommand("", Login, "login"));
+			Commands.Add(new IRCCommand("", Login, "login") { DoLog = false });
 			Commands.Add(new IRCCommand("", Logout, "logout"));
 			Commands.Add(new IRCCommand("", Players, "online", "players", "who"));
 		}
