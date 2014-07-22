@@ -18,6 +18,9 @@ namespace TShockIRC
 			var args = new IRCCommandEventArgs(str, sender, target);
 
 			string commandName = args[-1].ToLowerInvariant();
+			if (TShockIRC.Config.IgnoredCommands.Contains(commandName))
+				return;
+
 			var ircCommand = Commands.FirstOrDefault(c => c.Names.Contains(commandName));
 			var senderGroup = TShockIRC.IrcUsers[sender];
 			if (ircCommand != null)
