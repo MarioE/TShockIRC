@@ -110,6 +110,7 @@ namespace TShockIRC
 					UserName = Config.UserName,
 					UserModes = new List<char> { 'i', 'w' }
 				});
+			IrcClient.Disconnected += OnIRCDisconnected;
 			IrcClient.Registered += OnIRCRegistered;
 			CtcpClient = new CtcpClient(IrcClient) { ClientVersion = "TShockIRC v" + Version };
 		}
@@ -175,6 +176,23 @@ namespace TShockIRC
 		#endregion
 
 		#region IRC client events
+		void OnIRCDisconnected(object sender, EventArgs e)
+		{
+			IrcUsers.Clear();
+
+			IrcClient = new IrcClient();
+			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
+				new IrcUserRegistrationInfo()
+				{
+					NickName = Config.Nick,
+					RealName = Config.RealName,
+					UserName = Config.UserName,
+					UserModes = new List<char> { 'i', 'w' }
+				});
+			IrcClient.Disconnected += OnIRCDisconnected;
+			IrcClient.Registered += OnIRCRegistered;
+			CtcpClient = new CtcpClient(IrcClient) { ClientVersion = "TShockIRC v" + Version };
+		}
 		void OnIRCRegistered(object sender, EventArgs e)
 		{
 			foreach (string command in Config.ConnectCommands)
