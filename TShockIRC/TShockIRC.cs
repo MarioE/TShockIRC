@@ -49,7 +49,27 @@ namespace TShockIRC
 			Order = Int32.MaxValue;
 		}
 
-		#region TerrariaPlugin implementation
+		bool Connecting = false;
+		void Connect()
+		{
+			if (Connecting)
+				return;
+
+			Connecting = true;
+			IrcUsers.Clear();
+			IrcClient = new IrcClient();
+			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
+				new IrcUserRegistrationInfo()
+				{
+					NickName = Config.Nick,
+					RealName = Config.RealName,
+					UserName = Config.UserName,
+					UserModes = new List<char> { 'i', 'w' }
+				});
+			IrcClient.Disconnected += OnIRCDisconnected;
+			IrcClient.Registered += OnIRCRegistered;
+			CtcpClient = new CtcpClient(IrcClient) { ClientVersion = "TShockIRC v" + Version };
+		}
 		protected override void Dispose(bool disposing)
 		{
 			if (disposing)
@@ -73,12 +93,13 @@ namespace TShockIRC
 			PlayerHooks.PlayerCommand += OnPlayerCommand;
 			PlayerHooks.PlayerPostLogin += OnPostLogin;
 		}
-		#endregion
 
 		void OnChat(ServerChatEventArgs e)
 		{
 			TSPlayer tsPlr = TShock.Players[e.Who];
-			if (e.Text != null && !e.Text.StartsWith(TShock.Config.CommandSpecifier) && tsPlr != null &&
+			if (!IrcClient.IsConnected)
+				Connect();
+			else if (e.Text != null && !e.Text.StartsWith(TShock.Config.CommandSpecifier) && tsPlr != null &&
 				!tsPlr.mute && tsPlr.Group.HasPermission(Permissions.canchat) && !String.IsNullOrEmpty(Config.ServerChatMessageFormat) &&
 				!Config.IgnoredServerChatRegexes.Any(s => Regex.IsMatch(e.Text, s)))
 			{
@@ -87,11 +108,16 @@ namespace TShockIRC
 		}
 		void OnGreetPlayer(GreetPlayerEventArgs e)
 		{
-			TSPlayer tsplr = TShock.Players[e.Who];
-			if (!String.IsNullOrEmpty(Config.ServerJoinMessageFormat))
-				SendMessage(Config.Channel, String.Format(Config.ServerJoinMessageFormat, tsplr.Name));
-			if (!String.IsNullOrEmpty(Config.ServerJoinAdminMessageFormat))
-				SendMessage(Config.AdminChannel, String.Format(Config.ServerJoinAdminMessageFormat, tsplr.Name, tsplr.IP));
+			if (!IrcClient.IsConnected)
+				Connect();
+			else
+			{
+				TSPlayer tsplr = TShock.Players[e.Who];
+				if (!String.IsNullOrEmpty(Config.ServerJoinMessageFormat))
+					SendMessage(Config.Channel, String.Format(Config.ServerJoinMessageFormat, tsplr.Name));
+				if (!String.IsNullOrEmpty(Config.ServerJoinAdminMessageFormat))
+					SendMessage(Config.AdminChannel, String.Format(Config.ServerJoinAdminMessageFormat, tsplr.Name, tsplr.IP));
+			}
 		}
 		void OnInitialize(EventArgs e)
 		{
@@ -102,22 +128,14 @@ namespace TShockIRC
 			string configPath = Path.Combine(TShock.SavePath, "tshockircconfig.json");
 			(Config = Config.Read(configPath)).Write(configPath);
 
-			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
-				new IrcUserRegistrationInfo()
-				{
-					NickName = Config.Nick,
-					RealName = Config.RealName,
-					UserName = Config.UserName,
-					UserModes = new List<char> { 'i', 'w' }
-				});
-			IrcClient.Disconnected += OnIRCDisconnected;
-			IrcClient.Registered += OnIRCRegistered;
-			CtcpClient = new CtcpClient(IrcClient) { ClientVersion = "TShockIRC v" + Version };
+			Connect();
 		}
 		void OnLeave(LeaveEventArgs e)
 		{
 			TSPlayer tsplr = TShock.Players[e.Who];
-			if (tsplr != null && tsplr.ReceivedInfo && tsplr.State >= 3 && !tsplr.SilentKickInProgress)
+			if (!IrcClient.IsConnected)
+				Connect();
+			else if (tsplr != null && tsplr.ReceivedInfo && tsplr.State >= 3 && !tsplr.SilentKickInProgress)
 			{
 				if (!String.IsNullOrEmpty(Config.ServerLeaveMessageFormat))
 					SendMessage(Config.Channel, String.Format(Config.ServerLeaveMessageFormat, tsplr.Name));
@@ -127,9 +145,11 @@ namespace TShockIRC
 		}
 		void OnPlayerCommand(PlayerCommandEventArgs e)
 		{
-			if (e.Player.RealPlayer)
+			if (!IrcClient.IsConnected)
+				Connect();
+			else if (e.Player.RealPlayer)
 			{
-				if (String.Equals(e.CommandName, "me", StringComparison.CurrentCultureIgnoreCase))
+				if (String.Equals(e.CommandName, "me", StringComparison.CurrentCultureIgnoreCase) && e.CommandText.Length > 2)
 				{
 					if (!e.Player.mute && e.Player.Group.HasPermission(Permissions.cantalkinthird) && !String.IsNullOrEmpty(Config.ServerActionMessageFormat))
 						SendMessage(Config.Channel, String.Format(Config.ServerActionMessageFormat, e.Player.Name, e.CommandText.Substring(3)));
@@ -143,7 +163,9 @@ namespace TShockIRC
 		}
 		void OnPostLogin(PlayerPostLoginEventArgs e)
 		{
-			if (!String.IsNullOrEmpty(Config.ServerLoginAdminMessageFormat))
+			if (!IrcClient.IsConnected)
+				Connect();
+			else if (!String.IsNullOrEmpty(Config.ServerLoginAdminMessageFormat))
 				SendMessage(Config.AdminChannel, String.Format(Config.ServerLoginAdminMessageFormat, e.Player.Name, e.Player.UserAccountName, e.Player.IP));
 		}
 
@@ -178,23 +200,11 @@ namespace TShockIRC
 		#region IRC client events
 		void OnIRCDisconnected(object sender, EventArgs e)
 		{
-			IrcUsers.Clear();
-
-			IrcClient = new IrcClient();
-			IrcClient.Connect(Config.Server, Config.Port, Config.SSL,
-				new IrcUserRegistrationInfo()
-				{
-					NickName = Config.Nick,
-					RealName = Config.RealName,
-					UserName = Config.UserName,
-					UserModes = new List<char> { 'i', 'w' }
-				});
-			IrcClient.Disconnected += OnIRCDisconnected;
-			IrcClient.Registered += OnIRCRegistered;
-			CtcpClient = new CtcpClient(IrcClient) { ClientVersion = "TShockIRC v" + Version };
+			Connect();
 		}
 		void OnIRCRegistered(object sender, EventArgs e)
 		{
+			Connecting = false;
 			foreach (string command in Config.ConnectCommands)
 				IrcClient.SendRawMessage(command);
 			IrcClient.Channels.Join(new List<Tuple<string, string>>
